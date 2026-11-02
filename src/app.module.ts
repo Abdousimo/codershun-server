@@ -1,18 +1,15 @@
 import { Module } from "@nestjs/common";
-import { AppController } from "./app.controller";
-import { PrismaService } from "./prisma.service";
-import { UsersController } from "./users.controller";
-import { UsersService } from "./users.service";
+import { APP_GUARD } from "@nestjs/core";
+
+import { DatabaseModule } from "./infrastructure/database/database.module";
+import { AccessTokenGuard } from "./common/guards/access-token.guard";
+import { AppFeatureModule } from "./modules/app/app.module";
+import { AuthModule } from "./modules/auth/auth.module";
+import { ResourcesModule } from "./modules/resources/resources.module";
+import { UsersModule } from "./modules/users/users.module";
 
 @Module({
-  imports: [],
-  controllers: [
-    AppController,
-    UsersController
-  ],
-  providers: [
-    PrismaService,
-    UsersService
-  ],
+  imports: [DatabaseModule, AppFeatureModule, AuthModule, UsersModule, ResourcesModule],
+  providers: [{ provide: APP_GUARD, useClass: AccessTokenGuard }],
 })
 export class AppModule {}

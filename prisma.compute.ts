@@ -4,7 +4,7 @@ export default defineComputeConfig({
   app: {
     name: "codershub",
     framework: "nestjs",
-    httpPort: 3000,
+    httpPort: 3001,
     env: ".env",
   },
 });

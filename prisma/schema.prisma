@@ -7,10 +7,1967 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum UserRole {
+  talent
+  client_user
+  client_admin
+  referrer
+  recruiter
+  recruiter_lead
+  sales
+  account_manager
+  finance
+  super_admin
+}
+
+enum UserStatus {
+  invited
+  active
+  suspended
+  deactivated
+  deleted
+}
+
+enum UiLanguage {
+  en
+  fr
+  ar
+}
+
+enum AuthTokenType {
+  magic_link
+  email_verification
+  password_reset
+  invitation
+}
+
+enum EngagementModel {
+  time_material
+  dedicated_developer
+  team_extension
+  dedicated_team
+  project_based
+}
+
+enum SeniorityLevel {
+  junior
+  mid
+  senior
+  lead
+}
+
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+  native
+}
+
+enum SkillLevel {
+  beginner
+  intermediate
+  advanced
+  expert
+}
+
+enum CompanyStatus {
+  lead
+  client
+  churned
+}
+
+enum LeadStage {
+  new_lead
+  contacted
+  qualified
+  sourcing
+  shortlist_sent
+  interviewing
+  proposal_sent
+  won
+  lost
+}
+
+enum LeadSource {
+  hire_form
+  booked_call
+  contact_form
+  referral
+  talent_profile
+  manual
+  import
+  other
+}
+
+enum LostReason {
+  price
+  timing
+  no_fit
+  competitor
+  no_answer
+  other
+}
+
+enum RequestStatus {
+  open
+  sourcing
+  shortlist_sent
+  interviewing
+  proposal_sent
+  won
+  lost
+  cancelled
+}
+
+enum StartWindow {
+  asap
+  two_weeks
+  one_month
+  later
+}
+
+enum DurationBucket {
+  oneToThreeMonths  @map("1_3_months")
+  threeToSixMonths  @map("3_6_months")
+  sixToTwelveMonths @map("6_12_months")
+  twelvePlusMonths  @map("12_plus_months")
+}
+
+enum VettingStage {
+  applied
+  screening
+  hr_interview
+  technical_test
+  tech_interview
+  references
+  vetted
+  rejected
+  expired
+  on_hold
+}
+
+enum TalentStatus {
+  in_vetting
+  available
+  proposed
+  in_trial
+  placed
+  inactive
+  blacklisted
+}
+
+enum VettingStepType {
+  cv_screening
+  hr_call
+  technical_test
+  technical_interview
+  reference_check
+  approval
+}
+
+enum VettingStepStatus {
+  pending
+  scheduled
+  in_progress
+  passed
+  failed
+  expired
+  skipped
+}
+
+enum Recommendation {
+  strong_yes
+  yes
+  no
+  strong_no
+}
+
+enum RejectCategory {
+  experience
+  stack
+  language
+  communication
+  technical
+  references
+  pay_expectation
+  other
+}
+
+enum ShortlistStatus {
+  draft
+  published
+  closed
+}
+
+enum ClientDecision {
+  pending
+  interview
+  not_a_fit
+  hire
+}
+
+enum TalentResponse {
+  pending
+  accepted
+  declined
+}
+
+enum InterviewStatus {
+  proposed
+  scheduled
+  completed
+  cancelled
+  no_show
+  rescheduled
+}
+
+enum InterviewDecision {
+  hire
+  next_round
+  reject
+  undecided
+}
+
+enum PlacementStatus {
+  draft
+  pending_start
+  in_trial
+  active
+  notice
+  ended_in_trial
+  replaced
+  bought_out
+  ended
+  cancelled
+}
+
+enum NoticeParty {
+  client
+  talent
+  agency
+}
+
+enum CheckinType {
+  talent_monthly
+  client_quarterly
+}
+
+enum AbsenceType {
+  paid_leave
+  unpaid_leave
+  sick
+  public_holiday
+  other
+}
+
+enum RiskFlagSource {
+  low_checkin
+  low_nps
+  overdue_invoice
+  manual
+}
+
+enum ContractType {
+  client_msa
+  client_order_form
+  client_nda
+  talent_freelance_agreement
+  talent_employment
+  talent_nda
+  talent_ip_assignment
+  buyout_agreement
+}
+
+enum SignatureStatus {
+  draft
+  sent
+  partially_signed
+  signed
+  declined
+  expired
+  void
+}
+
+enum TimesheetStatus {
+  draft
+  submitted
+  approved
+  rejected
+  auto_approved
+}
+
+enum InvoiceKind {
+  invoice
+  credit_note
+}
+
+enum InvoiceStatus {
+  draft
+  issued
+  partially_paid
+  paid
+  overdue
+  void
+}
+
+enum InvoiceLineKind {
+  dedicated_fee
+  time_material
+  buyout_fee
+  project_milestone
+  proration
+  absence_credit
+  discount
+  adjustment
+  other
+}
+
+enum PaymentMethod {
+  swift
+  sepa
+  payoneer
+  card
+  local_transfer
+  other
+}
+
+enum PayoutStatus {
+  pending
+  approved
+  paid
+  cancelled
+}
+
+enum PayoutLineKind {
+  days_worked
+  trial_days
+  bonus
+  deduction
+  paid_leave
+  referral_bonus
+  adjustment
+}
+
+enum ReferrerKind {
+  client
+  talent
+  partner
+  external
+}
+
+enum ReferralStatus {
+  submitted
+  contacted
+  won
+  lost
+}
+
+enum RewardType {
+  monthly_plan
+  team
+  annual_plan
+  talent_referral
+}
+
+enum RewardStatus {
+  pending
+  payable
+  paid
+  cancelled
+}
+
+enum DocumentType {
+  cv
+  id_card
+  passport
+  tax_card
+  auto_entrepreneur_card
+  bank_proof
+  payoneer_proof
+  portfolio
+  test_result
+  contract
+  invoice_pdf
+  payout_statement
+  anonymised_profile
+  shortlist_pdf
+  other
+}
+
+enum NotificationChannel {
+  in_app
+  email
+  slack
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+  status_change
+  login
+  export
+  approve
+  override
+}
+
+enum ConsentType {
+  privacy_policy
+  terms
+  talent_terms
+  referral_terms
+  showcase
+  marketing
+  cookies_analytics
+}
+
+enum GdprRequestType {
+  export
+  deletion
+  rectification
+}
+
+enum GdprRequestStatus {
+  received
+  in_progress
+  completed
+  rejected
+}
+
+enum TaskStatus {
+  open
+  done
+  cancelled
+}
+
+model Currencies {
+  code             String  @id @db.Char(3)
+  name             String
+  symbol           String?
+  minorUnits       Int     @default(2) @map("minor_units") @db.SmallInt
+  isClientCurrency Boolean @default(false) @map("is_client_currency")
+  isActive         Boolean @default(true) @map("is_active")
+
+  @@map("currencies")
+}
+
+model FxRates {
+  id            String   @id @default(uuid()) @db.Uuid
+  baseCurrency  String   @map("base_currency") @db.Char(3)
+  quoteCurrency String   @map("quote_currency") @db.Char(3)
+  rate          Decimal  @db.Decimal(18, 8)
+  rateDate      DateTime @map("rate_date") @db.Date
+  source        String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@unique([baseCurrency, quoteCurrency, rateDate, source])
+  @@map("fx_rates")
+}
+
+model LegalEntities {
+  id                  String   @id @default(uuid()) @db.Uuid
+  name                String
+  legalForm           String?  @map("legal_form")
+  countryCode         String   @map("country_code") @db.Char(2)
+  registrationNumber  String?  @map("registration_number")
+  taxId               String?  @map("tax_id")
+  address             String?
+  bankName            String?  @map("bank_name")
+  iban                String?
+  swiftBic            String?  @map("swift_bic")
+  payoneerAccount     String?  @map("payoneer_account")
+  defaultCurrency     String   @map("default_currency") @db.Char(3)
+  invoicePrefix       String   @map("invoice_prefix")
+  creditNotePrefix    String   @default("CN") @map("credit_note_prefix")
+  taxMentions         Json     @default("{}") @map("tax_mentions") @db.JsonB
+  defaultVatRate      Decimal  @default(0) @map("default_vat_rate") @db.Decimal(5, 2)
+  acceptsCardPayments Boolean  @default(false) @map("accepts_card_payments")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt           DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("legal_entities")
+}
+
+model Settings {
+  key         String   @id
+  value       Json     @db.JsonB
+  description String?
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("settings")
+}
+
+model RateCardVersions {
+  id                     String    @id @default(uuid()) @db.Uuid
+  label                  String
+  validFrom              DateTime  @map("valid_from") @db.Date
+  validTo                DateTime? @map("valid_to") @db.Date
+  isCurrent              Boolean   @default(false) @map("is_current")
+  hoursPerMonth          Decimal   @default(160) @map("hours_per_month") @db.Decimal(6, 2)
+  tmPremiumPct           Decimal   @default(15) @map("tm_premium_pct") @db.Decimal(5, 2)
+  hoursPerDay            Decimal   @default(8) @map("hours_per_day") @db.Decimal(4, 2)
+  partTimePricePct       Decimal   @default(55) @map("part_time_price_pct") @db.Decimal(5, 2)
+  floorMarginPct         Decimal   @default(25) @map("floor_margin_pct") @db.Decimal(5, 2)
+  warningMarginPct       Decimal   @default(30) @map("warning_margin_pct") @db.Decimal(5, 2)
+  maxCombinedDiscountPct Decimal   @default(12) @map("max_combined_discount_pct") @db.Decimal(5, 2)
+  minDedicatedMonths     Int       @default(1) @map("min_dedicated_months") @db.SmallInt
+  minTmHours             Int       @default(40) @map("min_tm_hours") @db.SmallInt
+  createdBy              String?   @map("created_by") @db.Uuid
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("rate_card_versions")
+}
+
+model RateCardEntries {
+  id                String         @id @default(uuid()) @db.Uuid
+  rateCardVersionId String         @map("rate_card_version_id") @db.Uuid
+  seniority         SeniorityLevel
+  minYears          Int            @map("min_years") @db.SmallInt
+  maxYears          Int?           @map("max_years") @db.SmallInt
+  talentNetPay      Decimal        @map("talent_net_pay") @db.Decimal(12, 2)
+  targetMarginPct   Decimal        @map("target_margin_pct") @db.Decimal(5, 2)
+  currency          String         @default("EUR") @db.Char(3)
+  clientPrice       Decimal?       @default(dbgenerated()) @map("client_price") @db.Decimal(12, 2)
+
+  @@unique([rateCardVersionId, seniority])
+  @@map("rate_card_entries")
+}
+
+model DiscountRules {
+  id                  String   @id @default(uuid()) @db.Uuid
+  code                String
+  label               String
+  discountPct         Decimal  @map("discount_pct") @db.Decimal(5, 2)
+  minTalents          Int?     @map("min_talents") @db.SmallInt
+  minCommitmentMonths Int?     @map("min_commitment_months") @db.SmallInt
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt           DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("discount_rules")
+}
+
+model BuyoutTiers {
+  id         String  @id @default(uuid()) @db.Uuid
+  fromMonth  Int     @map("from_month") @db.SmallInt
+  toMonth    Int?    @map("to_month") @db.SmallInt
+  multiplier Decimal @db.Decimal(5, 2)
+  isActive   Boolean @default(true) @map("is_active")
+
+  @@unique([fromMonth])
+  @@map("buyout_tiers")
+}
+
+model ReferralRewardRules {
+  id                   String     @id @default(uuid()) @db.Uuid
+  rewardType           RewardType @map("reward_type")
+  baseAmount           Decimal    @map("base_amount") @db.Decimal(12, 2)
+  perExtraTalentAmount Decimal    @default(0) @map("per_extra_talent_amount") @db.Decimal(12, 2)
+  extraTalentThreshold Int?       @map("extra_talent_threshold") @db.SmallInt
+  currency             String     @default("EUR") @db.Char(3)
+  paidInvoicesRequired Int        @default(2) @map("paid_invoices_required") @db.SmallInt
+  minClientMonths      Int        @default(3) @map("min_client_months") @db.SmallInt
+  attributionDays      Int        @default(90) @map("attribution_days") @db.SmallInt
+  isActive             Boolean    @default(true) @map("is_active")
+
+  @@map("referral_reward_rules")
+}
+
+model WorkCalendars {
+  id          String @id @default(uuid()) @db.Uuid
+  name        String
+  countryCode String @map("country_code") @db.Char(2)
+  workingDays Int[]  @default([]) @map("working_days")
+
+  @@unique([name])
+  @@map("work_calendars")
+}
+
+model PublicHolidays {
+  id          String   @id @default(uuid()) @db.Uuid
+  calendarId  String   @map("calendar_id") @db.Uuid
+  holidayDate DateTime @map("holiday_date") @db.Date
+  name        String
+
+  @@unique([calendarId, holidayDate])
+  @@map("public_holidays")
+}
+
+model SalaryBenchmarks {
+  id                 String         @id @default(uuid()) @db.Uuid
+  countryCode        String         @map("country_code") @db.Char(2)
+  jobRoleId          String?        @map("job_role_id") @db.Uuid
+  seniority          SeniorityLevel
+  yearlyEmployerCost Decimal        @map("yearly_employer_cost") @db.Decimal(12, 2)
+  currency           String         @db.Char(3)
+  sourceName         String         @map("source_name")
+  sourceUrl          String?        @map("source_url")
+  validYear          Int            @map("valid_year") @db.SmallInt
+
+  @@unique([countryCode, jobRoleId, seniority, validYear])
+  @@map("salary_benchmarks")
+}
+
+model Users {
+  id                     String     @id @default(uuid()) @db.Uuid
+  email                  String     @unique
+  emailVerifiedAt        DateTime?  @map("email_verified_at") @db.Timestamp(6)
+  passwordHash           String?    @map("password_hash")
+  role                   UserRole
+  firstName              String?    @map("first_name")
+  lastName               String?    @map("last_name")
+  avatarFileId           String?    @map("avatar_file_id") @db.Uuid
+  phone                  String?
+  language               UiLanguage @default(dbgenerated("'en'"))
+  timezone               String     @default("Europe/Paris")
+  twoFactorEnabled       Boolean    @default(false) @map("two_factor_enabled")
+  twoFactorSecret        String?    @map("two_factor_secret")
+  twoFactorRecoveryCodes String[]   @map("two_factor_recovery_codes")
+  status                 UserStatus @default(dbgenerated("'active'"))
+  lastLoginAt            DateTime?  @map("last_login_at") @db.Timestamp(6)
+  lastLoginIp            String?    @map("last_login_ip")
+  failedLoginCount       Int        @default(0) @map("failed_login_count") @db.SmallInt
+  lockedUntil            DateTime?  @map("locked_until") @db.Timestamp(6)
+  deletedAt              DateTime?  @map("deleted_at") @db.Timestamp(6)
+  createdAt              DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt              DateTime   @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy              String?    @map("created_by") @db.Uuid
+
+  @@map("users")
+}
+
+model OauthAccounts {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  provider          String
+  providerAccountId String   @map("provider_account_id")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@unique([provider, providerAccountId])
+  @@map("oauth_accounts")
+}
+
+model AuthTokens {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String?       @map("user_id") @db.Uuid
+  email     String
+  tokenHash String        @map("token_hash")
+  type      AuthTokenType
+  expiresAt DateTime      @map("expires_at") @db.Timestamp(6)
+  usedAt    DateTime?     @map("used_at") @db.Timestamp(6)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("auth_tokens")
+}
+
+model UserSessions {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  sessionTokenHash String    @map("session_token_hash")
+  ip               String?
+  userAgent        String?   @map("user_agent")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamp(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamp(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("user_sessions")
+}
+
+model StaffProfiles {
+  userId             String   @id @default(uuid()) @map("user_id") @db.Uuid
+  jobTitle           String?  @map("job_title")
+  whatsapp           String?
+  calendarUrl        String?  @map("calendar_url")
+  slackUserId        String?  @map("slack_user_id")
+  isReviewer         Boolean  @default(false) @map("is_reviewer")
+  isExternalReviewer Boolean  @default(false) @map("is_external_reviewer")
+  reviewerFee        Decimal? @map("reviewer_fee") @db.Decimal(10, 2)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt          DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("staff_profiles")
+}
+
+model Consents {
+  id              String      @id @default(uuid()) @db.Uuid
+  userId          String?     @map("user_id") @db.Uuid
+  email           String?
+  consentType     ConsentType @map("consent_type")
+  documentVersion String?     @map("document_version")
+  granted         Boolean
+  ip              String?
+  userAgent       String?     @map("user_agent")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("consents")
+}
+
+model GdprRequests {
+  id           String            @id @default(uuid()) @db.Uuid
+  userId       String?           @map("user_id") @db.Uuid
+  email        String
+  requestType  GdprRequestType   @map("request_type")
+  status       GdprRequestStatus @default(dbgenerated("'received'"))
+  dueAt        DateTime          @default(dbgenerated("(now() + interval '30 days')")) @map("due_at") @db.Timestamp(6)
+  completedAt  DateTime?         @map("completed_at") @db.Timestamp(6)
+  handledBy    String?           @map("handled_by") @db.Uuid
+  exportFileId String?           @map("export_file_id") @db.Uuid
+  notes        String?
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime          @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("gdpr_requests")
+}
+
+model Files {
+  id              String   @id @default(uuid()) @db.Uuid
+  storageKey      String   @map("storage_key")
+  bucket          String   @default("private")
+  originalName    String   @map("original_name")
+  mimeType        String   @map("mime_type")
+  sizeBytes       BigInt   @map("size_bytes") @db.BigInt
+  checksumSha256  String?  @map("checksum_sha256")
+  virusScanStatus String   @default("pending") @map("virus_scan_status")
+  uploadedBy      String?  @map("uploaded_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("files")
+}
+
+model JobCategories {
+  id          String  @id @default(uuid()) @db.Uuid
+  slug        String
+  nameEn      String  @map("name_en")
+  nameFr      String  @map("name_fr")
+  nameAr      String? @map("name_ar")
+  isOnRequest Boolean @default(false) @map("is_on_request")
+  sortOrder   Int     @default(0) @map("sort_order") @db.SmallInt
+
+  @@map("job_categories")
+}
+
+model JobRoles {
+  id              String  @id @default(uuid()) @db.Uuid
+  categoryId      String  @map("category_id") @db.Uuid
+  slug            String
+  nameEn          String  @map("name_en")
+  nameFr          String  @map("name_fr")
+  nameAr          String? @map("name_ar")
+  isRareSkill     Boolean @default(false) @map("is_rare_skill")
+  skillPremiumPct Decimal @default(0) @map("skill_premium_pct") @db.Decimal(5, 2)
+  isActive        Boolean @default(true) @map("is_active")
+
+  @@map("job_roles")
+}
+
+model Skills {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  slug       String
+  categoryId String?  @map("category_id") @db.Uuid
+  isRare     Boolean  @default(false) @map("is_rare")
+  premiumPct Decimal  @default(0) @map("premium_pct") @db.Decimal(5, 2)
+  aliases    String[] @default([])
+
+  @@map("skills")
+}
+
+model Languages {
+  code String @id
+  name String
+
+  @@map("languages")
+}
+
+model Tags {
+  id    String  @id @default(uuid()) @db.Uuid
+  name  String
+  scope String
+  color String?
+
+  @@unique([scope, name])
+  @@map("tags")
+}
+
+model Referrers {
+  id              String         @id @default(uuid()) @db.Uuid
+  userId          String?        @map("user_id") @db.Uuid
+  kind            ReferrerKind
+  name            String
+  email           String
+  phone           String?
+  companyId       String?        @map("company_id") @db.Uuid
+  code            String
+  paymentMethod   PaymentMethod? @map("payment_method")
+  paymentDetails  Json           @default("{}") @map("payment_details") @db.JsonB
+  termsAcceptedAt DateTime?      @map("terms_accepted_at") @db.Timestamp(6)
+  isActive        Boolean        @default(true) @map("is_active")
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime       @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy       String?        @map("created_by") @db.Uuid
+
+  @@map("referrers")
+}
+
+model Companies {
+  id                 String        @id @default(uuid()) @db.Uuid
+  name               String
+  legalName          String?       @map("legal_name")
+  countryCode        String?       @map("country_code") @db.Char(2)
+  industry           String?
+  sizeRange          String?       @map("size_range")
+  website            String?
+  vatNumber          String?       @map("vat_number")
+  billingAddress     String?       @map("billing_address")
+  billingCity        String?       @map("billing_city")
+  billingPostalCode  String?       @map("billing_postal_code")
+  billingCountryCode String?       @map("billing_country_code") @db.Char(2)
+  billingEmail       String?       @map("billing_email")
+  legalEntityId      String?       @map("legal_entity_id") @db.Uuid
+  currency           String        @default("EUR") @db.Char(3)
+  status             CompanyStatus @default(dbgenerated("'lead'"))
+  source             LeadSource?
+  referralId         String?       @map("referral_id") @db.Uuid
+  accountManagerId   String?       @map("account_manager_id") @db.Uuid
+  workCalendarId     String?       @map("work_calendar_id") @db.Uuid
+  paymentTermsDays   Int           @default(7) @map("payment_terms_days") @db.SmallInt
+  isOverdueFlagged   Boolean       @default(false) @map("is_overdue_flagged")
+  requestsBlockedAt  DateTime?     @map("requests_blocked_at") @db.Timestamp(6)
+  requestsBlockedBy  String?       @map("requests_blocked_by") @db.Uuid
+  notes              String?
+  deletedAt          DateTime?     @map("deleted_at") @db.Timestamp(6)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt          DateTime      @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy          String?       @map("created_by") @db.Uuid
+
+  @@map("companies")
+}
+
+model Contacts {
+  id               String   @id @default(uuid()) @db.Uuid
+  companyId        String   @map("company_id") @db.Uuid
+  userId           String?  @map("user_id") @db.Uuid
+  firstName        String   @map("first_name")
+  lastName         String?  @map("last_name")
+  email            String?
+  phone            String?
+  jobTitle         String?  @map("job_title")
+  isDecisionMaker  Boolean  @default(false) @map("is_decision_maker")
+  isBillingContact Boolean  @default(false) @map("is_billing_contact")
+  linkedinUrl      String?  @map("linkedin_url")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy        String?  @map("created_by") @db.Uuid
+
+  @@map("contacts")
+}
+
+model CompanyUsers {
+  id              String    @id @default(uuid()) @db.Uuid
+  companyId       String    @map("company_id") @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  isAdmin         Boolean   @default(false) @map("is_admin")
+  canViewInvoices Boolean   @default(false) @map("can_view_invoices")
+  invitedBy       String?   @map("invited_by") @db.Uuid
+  invitedAt       DateTime? @map("invited_at") @db.Timestamp(6)
+  acceptedAt      DateTime? @map("accepted_at") @db.Timestamp(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@unique([companyId, userId])
+  @@map("company_users")
+}
+
+model Leads {
+  id                    String      @id @default(uuid()) @db.Uuid
+  companyId             String      @map("company_id") @db.Uuid
+  contactId             String?     @map("contact_id") @db.Uuid
+  stage                 LeadStage   @default(dbgenerated("'new_lead'"))
+  source                LeadSource
+  heardAboutUs          String?     @map("heard_about_us")
+  utmSource             String?     @map("utm_source")
+  utmMedium             String?     @map("utm_medium")
+  utmCampaign           String?     @map("utm_campaign")
+  utmTerm               String?     @map("utm_term")
+  utmContent            String?     @map("utm_content")
+  landingPage           String?     @map("landing_page")
+  referrerUrl           String?     @map("referrer_url")
+  referralCode          String?     @map("referral_code")
+  referrerId            String?     @map("referrer_id") @db.Uuid
+  ownerId               String?     @map("owner_id") @db.Uuid
+  estimatedMonthlyValue Decimal?    @map("estimated_monthly_value") @db.Decimal(12, 2)
+  firstContactedAt      DateTime?   @map("first_contacted_at") @db.Timestamp(6)
+  qualifiedAt           DateTime?   @map("qualified_at") @db.Timestamp(6)
+  wonAt                 DateTime?   @map("won_at") @db.Timestamp(6)
+  lostAt                DateTime?   @map("lost_at") @db.Timestamp(6)
+  lostReason            LostReason? @map("lost_reason")
+  lostReasonDetail      String?     @map("lost_reason_detail")
+  discoveryCallAt       DateTime?   @map("discovery_call_at") @db.Timestamp(6)
+  discoveryCallUrl      String?     @map("discovery_call_url")
+  notes                 String?
+  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt             DateTime    @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy             String?     @map("created_by") @db.Uuid
+
+  @@map("leads")
+}
+
+model FormSubmissions {
+  id           String     @id @default(uuid()) @db.Uuid
+  formType     String     @map("form_type")
+  locale       UiLanguage @default(dbgenerated("'en'"))
+  payload      Json       @db.JsonB
+  leadId       String?    @map("lead_id") @db.Uuid
+  ip           String?
+  userAgent    String?    @map("user_agent")
+  captchaScore Decimal?   @map("captcha_score") @db.Decimal(4, 3)
+  processedAt  DateTime?  @map("processed_at") @db.Timestamp(6)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("form_submissions")
+}
+
+model Talents {
+  id                  String          @id @default(uuid()) @db.Uuid
+  userId              String?         @map("user_id") @db.Uuid
+  firstName           String          @map("first_name")
+  lastName            String          @map("last_name")
+  email               String
+  phone               String?
+  whatsapp            String?
+  city                String?
+  countryCode         String          @default("DZ") @map("country_code") @db.Char(2)
+  headline            String?
+  summary             String?
+  categoryId          String?         @map("category_id") @db.Uuid
+  jobRoleId           String?         @map("job_role_id") @db.Uuid
+  seniority           SeniorityLevel?
+  yearsExperience     Decimal?        @map("years_experience") @db.Decimal(4, 1)
+  linkedinUrl         String?         @map("linkedin_url")
+  githubUrl           String?         @map("github_url")
+  portfolioUrl        String?         @map("portfolio_url")
+  expectedPay         Decimal?        @map("expected_pay") @db.Decimal(12, 2)
+  currentPay          Decimal?        @map("current_pay") @db.Decimal(12, 2)
+  agreedPay           Decimal?        @map("agreed_pay") @db.Decimal(12, 2)
+  payCurrency         String          @default("EUR") @map("pay_currency") @db.Char(3)
+  availabilityDate    DateTime?       @map("availability_date") @db.Date
+  noticePeriodDays    Int?            @map("notice_period_days") @db.SmallInt
+  timeSharePct        Int             @default(100) @map("time_share_pct") @db.SmallInt
+  vettingStage        VettingStage    @default(dbgenerated("'applied'")) @map("vetting_stage")
+  status              TalentStatus    @default(dbgenerated("'in_vetting'"))
+  vettingScore        Decimal?        @map("vetting_score") @db.Decimal(5, 2)
+  vettedAt            DateTime?       @map("vetted_at") @db.Timestamp(6)
+  vettedBy            String?         @map("vetted_by") @db.Uuid
+  rejectedAt          DateTime?       @map("rejected_at") @db.Timestamp(6)
+  rejectCategory      RejectCategory? @map("reject_category")
+  rejectReason        String?         @map("reject_reason")
+  canReapplyAfter     DateTime?       @map("can_reapply_after") @db.Date
+  showcaseOptIn       Boolean         @default(false) @map("showcase_opt_in")
+  showcaseConsentAt   DateTime?       @map("showcase_consent_at") @db.Timestamp(6)
+  showcasePublished   Boolean         @default(false) @map("showcase_published")
+  publicSlug          String?         @map("public_slug")
+  publicDisplayName   String?         @map("public_display_name")
+  photoFileId         String?         @map("photo_file_id") @db.Uuid
+  photoConsentAt      DateTime?       @map("photo_consent_at") @db.Timestamp(6)
+  showIndicativePrice Boolean         @default(false) @map("show_indicative_price")
+  payoutMethod        PaymentMethod?  @map("payout_method")
+  payoutCurrency      String?         @map("payout_currency") @db.Char(3)
+  payoutDetails       Json            @default("{}") @map("payout_details") @db.JsonB
+  isBlacklisted       Boolean         @default(false) @map("is_blacklisted")
+  blacklistReason     String?         @map("blacklist_reason")
+  lastActivityAt      DateTime?       @map("last_activity_at") @db.Timestamp(6)
+  profileCompleteness Int             @default(0) @map("profile_completeness") @db.SmallInt
+  recruiterId         String?         @map("recruiter_id") @db.Uuid
+  mergedIntoId        String?         @map("merged_into_id") @db.Uuid
+  anonymisedAt        DateTime?       @map("anonymised_at") @db.Timestamp(6)
+  deletedAt           DateTime?       @map("deleted_at") @db.Timestamp(6)
+  searchVector        String?         @map("search_vector")
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt           DateTime        @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy           String?         @map("created_by") @db.Uuid
+  NOT                 String?
+
+  @@map("talents")
+}
+
+model TalentSkills {
+  talentId      String     @map("talent_id") @db.Uuid
+  skillId       String     @map("skill_id") @db.Uuid
+  level         SkillLevel @default(dbgenerated("'intermediate'"))
+  years         Decimal?   @db.Decimal(4, 1)
+  isTopSkill    Boolean    @default(false) @map("is_top_skill")
+  verifiedScore Int?       @map("verified_score") @db.SmallInt
+
+  @@id([talentId, skillId])
+  @@map("talent_skills")
+}
+
+model TalentLanguages {
+  talentId     String    @map("talent_id") @db.Uuid
+  languageCode String    @map("language_code")
+  level        CefrLevel
+
+  @@id([talentId, languageCode])
+  @@map("talent_languages")
+}
+
+model TalentExperiences {
+  id                 String    @id @default(uuid()) @db.Uuid
+  talentId           String    @map("talent_id") @db.Uuid
+  companyName        String    @map("company_name")
+  publicCompanyLabel String?   @map("public_company_label")
+  hideCompanyName    Boolean   @default(true) @map("hide_company_name")
+  title              String
+  countryCode        String?   @map("country_code") @db.Char(2)
+  isRemote           Boolean?  @map("is_remote")
+  startDate          DateTime  @map("start_date") @db.Date
+  endDate            DateTime? @map("end_date") @db.Date
+  description        String?
+  technologies       String[]  @default([])
+  sortOrder          Int       @default(0) @map("sort_order") @db.SmallInt
+
+  @@map("talent_experiences")
+}
+
+model TalentEducations {
+  id           String  @id @default(uuid()) @db.Uuid
+  talentId     String  @map("talent_id") @db.Uuid
+  institution  String
+  degree       String?
+  fieldOfStudy String? @map("field_of_study")
+  startYear    Int?    @map("start_year") @db.SmallInt
+  endYear      Int?    @map("end_year") @db.SmallInt
+
+  @@map("talent_educations")
+}
+
+model TalentCertifications {
+  id            String    @id @default(uuid()) @db.Uuid
+  talentId      String    @map("talent_id") @db.Uuid
+  name          String
+  issuer        String?
+  issuedOn      DateTime? @map("issued_on") @db.Date
+  expiresOn     DateTime? @map("expires_on") @db.Date
+  credentialUrl String?   @map("credential_url")
+
+  @@map("talent_certifications")
+}
+
+model TalentPortfolioItems {
+  id              String  @id @default(uuid()) @db.Uuid
+  talentId        String  @map("talent_id") @db.Uuid
+  title           String
+  url             String?
+  fileId          String? @map("file_id") @db.Uuid
+  thumbnailFileId String? @map("thumbnail_file_id") @db.Uuid
+  description     String?
+  isPublic        Boolean @default(false) @map("is_public")
+  sortOrder       Int     @default(0) @map("sort_order") @db.SmallInt
+
+  @@map("talent_portfolio_items")
+}
+
+model TalentReferences {
+  id           String    @id @default(uuid()) @db.Uuid
+  talentId     String    @map("talent_id") @db.Uuid
+  name         String
+  company      String?
+  relationship String?
+  email        String?
+  phone        String?
+  contactedAt  DateTime? @map("contacted_at") @db.Timestamp(6)
+  feedback     String?
+  rating       Int?      @db.SmallInt
+  checkedBy    String?   @map("checked_by") @db.Uuid
+
+  @@map("talent_references")
+}
+
+model TalentTags {
+  talentId String @map("talent_id") @db.Uuid
+  tagId    String @map("tag_id") @db.Uuid
+
+  @@id([talentId, tagId])
+  @@map("talent_tags")
+}
+
+model TalentDocuments {
+  id         String       @id @default(uuid()) @db.Uuid
+  talentId   String       @map("talent_id") @db.Uuid
+  fileId     String       @map("file_id") @db.Uuid
+  type       DocumentType
+  label      String?
+  expiresOn  DateTime?    @map("expires_on") @db.Date
+  isCurrent  Boolean      @default(true) @map("is_current")
+  verifiedBy String?      @map("verified_by") @db.Uuid
+  verifiedAt DateTime?    @map("verified_at") @db.Timestamp(6)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("talent_documents")
+}
+
+model VettingSteps {
+  id                   String            @id @default(uuid()) @db.Uuid
+  talentId             String            @map("talent_id") @db.Uuid
+  type                 VettingStepType
+  status               VettingStepStatus @default(dbgenerated("'pending'"))
+  scheduledAt          DateTime?         @map("scheduled_at") @db.Timestamp(6)
+  completedAt          DateTime?         @map("completed_at") @db.Timestamp(6)
+  deadlineAt           DateTime?         @map("deadline_at") @db.Timestamp(6)
+  reviewerId           String?           @map("reviewer_id") @db.Uuid
+  testProvider         String?           @map("test_provider")
+  testLink             String?           @map("test_link")
+  testResultUrl        String?           @map("test_result_url")
+  meetingLink          String?           @map("meeting_link")
+  score                Decimal?          @db.Decimal(5, 2)
+  notes                String?
+  talentVisibleSummary String?           @map("talent_visible_summary")
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt            DateTime          @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy            String?           @map("created_by") @db.Uuid
+
+  @@map("vetting_steps")
+}
+
+model Scorecards {
+  id             String         @id @default(uuid()) @db.Uuid
+  vettingStepId  String         @map("vetting_step_id") @db.Uuid
+  reviewerId     String         @map("reviewer_id") @db.Uuid
+  totalScore     Decimal        @map("total_score") @db.Decimal(5, 2)
+  recommendation Recommendation
+  strengths      String?
+  concerns       String?
+  submittedAt    DateTime       @default(now()) @map("submitted_at") @db.Timestamp(6)
+
+  @@unique([vettingStepId, reviewerId])
+  @@map("scorecards")
+}
+
+model ScorecardScores {
+  scorecardId String  @map("scorecard_id") @db.Uuid
+  criterion   String
+  skillId     String? @map("skill_id") @db.Uuid
+  score       Int     @db.SmallInt
+  comment     String?
+
+  @@id([scorecardId, criterion])
+  @@map("scorecard_scores")
+}
+
+model TalentRequests {
+  id                   String          @id @default(uuid()) @db.Uuid
+  companyId            String          @map("company_id") @db.Uuid
+  leadId               String?         @map("lead_id") @db.Uuid
+  requestedByContactId String?         @map("requested_by_contact_id") @db.Uuid
+  sourceTalentId       String?         @map("source_talent_id") @db.Uuid
+  replacesPlacementId  String?         @map("replaces_placement_id") @db.Uuid
+  engagementModel      EngagementModel @map("engagement_model")
+  categoryId           String?         @map("category_id") @db.Uuid
+  jobRoleId            String?         @map("job_role_id") @db.Uuid
+  roleTitle            String?         @map("role_title")
+  seniority            SeniorityLevel?
+  talentsCount         Int             @default(1) @map("talents_count") @db.SmallInt
+  timezoneOverlapHours Int?            @map("timezone_overlap_hours") @db.SmallInt
+  startWindow          StartWindow?    @map("start_window")
+  desiredStartDate     DateTime?       @map("desired_start_date") @db.Date
+  duration             DurationBucket?
+  timeSharePct         Int             @default(100) @map("time_share_pct") @db.SmallInt
+  budgetMin            Decimal?        @map("budget_min") @db.Decimal(12, 2)
+  budgetMax            Decimal?        @map("budget_max") @db.Decimal(12, 2)
+  budgetCurrency       String?         @map("budget_currency") @db.Char(3)
+  indicativePriceMin   Decimal?        @map("indicative_price_min") @db.Decimal(12, 2)
+  indicativePriceMax   Decimal?        @map("indicative_price_max") @db.Decimal(12, 2)
+  description          String?
+  status               RequestStatus   @default(dbgenerated("'open'"))
+  recruiterId          String?         @map("recruiter_id") @db.Uuid
+  qualifiedAt          DateTime?       @map("qualified_at") @db.Timestamp(6)
+  slaDeadlineAt        DateTime?       @map("sla_deadline_at") @db.Timestamp(6)
+  slaWarned24HAt       DateTime?       @map("sla_warned_24h_at") @db.Timestamp(6)
+  slaWarned40HAt       DateTime?       @map("sla_warned_40h_at") @db.Timestamp(6)
+  firstShortlistAt     DateTime?       @map("first_shortlist_at") @db.Timestamp(6)
+  closedAt             DateTime?       @map("closed_at") @db.Timestamp(6)
+  lostReason           LostReason?     @map("lost_reason")
+  cancelledReason      String?         @map("cancelled_reason")
+  createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt            DateTime        @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy            String?         @map("created_by") @db.Uuid
+
+  @@map("talent_requests")
+}
+
+model TalentRequestSkills {
+  requestId  String      @map("request_id") @db.Uuid
+  skillId    String      @map("skill_id") @db.Uuid
+  isRequired Boolean     @default(true) @map("is_required")
+  minLevel   SkillLevel? @map("min_level")
+
+  @@id([requestId, skillId])
+  @@map("talent_request_skills")
+}
+
+model TalentRequestLanguages {
+  requestId    String    @map("request_id") @db.Uuid
+  languageCode String    @map("language_code")
+  minLevel     CefrLevel @default(dbgenerated("'B2'")) @map("min_level")
+
+  @@id([requestId, languageCode])
+  @@map("talent_request_languages")
+}
+
+model Shortlists {
+  id             String          @id @default(uuid()) @db.Uuid
+  requestId      String          @map("request_id") @db.Uuid
+  version        Int             @default(1) @db.SmallInt
+  status         ShortlistStatus @default(dbgenerated("'draft'"))
+  publishedAt    DateTime?       @map("published_at") @db.Timestamp(6)
+  publishedBy    String?         @map("published_by") @db.Uuid
+  pdfFileId      String?         @map("pdf_file_id") @db.Uuid
+  shareTokenHash String?         @map("share_token_hash")
+  shareExpiresAt DateTime?       @map("share_expires_at") @db.Timestamp(6)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt      DateTime        @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy      String?         @map("created_by") @db.Uuid
+
+  @@unique([requestId, version])
+  @@map("shortlists")
+}
+
+model ShortlistItems {
+  id                      String         @id @default(uuid()) @db.Uuid
+  shortlistId             String         @map("shortlist_id") @db.Uuid
+  talentId                String         @map("talent_id") @db.Uuid
+  matchScore              Decimal?       @map("match_score") @db.Decimal(5, 2)
+  matchBreakdown          Json?          @map("match_breakdown") @db.JsonB
+  recruiterNote           String?        @map("recruiter_note")
+  proposedClientPrice     Decimal?       @map("proposed_client_price") @db.Decimal(12, 2)
+  proposedCurrency        String?        @map("proposed_currency") @db.Char(3)
+  anonymisedProfileFileId String?        @map("anonymised_profile_file_id") @db.Uuid
+  talentResponse          TalentResponse @default(dbgenerated("'pending'")) @map("talent_response")
+  talentRespondedAt       DateTime?      @map("talent_responded_at") @db.Timestamp(6)
+  talentDeclineReason     String?        @map("talent_decline_reason")
+  clientDecision          ClientDecision @default(dbgenerated("'pending'")) @map("client_decision")
+  clientDecisionReason    String?        @map("client_decision_reason")
+  clientDecidedBy         String?        @map("client_decided_by") @db.Uuid
+  clientDecidedAt         DateTime?      @map("client_decided_at") @db.Timestamp(6)
+  clientComment           String?        @map("client_comment")
+  contactRevealedAt       DateTime?      @map("contact_revealed_at") @db.Timestamp(6)
+  sortOrder               Int            @default(0) @map("sort_order") @db.SmallInt
+  createdAt               DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@unique([shortlistId, talentId])
+  @@map("shortlist_items")
+}
+
+model Interviews {
+  id                String          @id @default(uuid()) @db.Uuid
+  requestId         String          @map("request_id") @db.Uuid
+  shortlistItemId   String?         @map("shortlist_item_id") @db.Uuid
+  talentId          String          @map("talent_id") @db.Uuid
+  companyId         String          @map("company_id") @db.Uuid
+  round             Int             @default(1) @db.SmallInt
+  status            InterviewStatus @default(dbgenerated("'proposed'"))
+  startsAt          DateTime?       @map("starts_at") @db.Timestamp(6)
+  endsAt            DateTime?       @map("ends_at") @db.Timestamp(6)
+  timezone          String?
+  meetingProvider   String?         @map("meeting_provider")
+  meetingLink       String?         @map("meeting_link")
+  externalEventId   String?         @map("external_event_id")
+  prepNotes         String?         @map("prep_notes")
+  recruiterId       String?         @map("recruiter_id") @db.Uuid
+  reminder24HSentAt DateTime?       @map("reminder_24h_sent_at") @db.Timestamp(6)
+  reminder1HSentAt  DateTime?       @map("reminder_1h_sent_at") @db.Timestamp(6)
+  cancelledReason   String?         @map("cancelled_reason")
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime        @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy         String?         @map("created_by") @db.Uuid
+
+  @@map("interviews")
+}
+
+model InterviewSlots {
+  id          String   @id @default(uuid()) @db.Uuid
+  interviewId String   @map("interview_id") @db.Uuid
+  proposedBy  String?  @map("proposed_by") @db.Uuid
+  startsAt    DateTime @map("starts_at") @db.Timestamp(6)
+  endsAt      DateTime @map("ends_at") @db.Timestamp(6)
+  isSelected  Boolean  @default(false) @map("is_selected")
+
+  @@map("interview_slots")
+}
+
+model InterviewParticipants {
+  interviewId String @map("interview_id") @db.Uuid
+  contactId   String @map("contact_id") @db.Uuid
+
+  @@id([interviewId, contactId])
+  @@map("interview_participants")
+}
+
+model InterviewFeedback {
+  id               String             @id @default(uuid()) @db.Uuid
+  interviewId      String             @map("interview_id") @db.Uuid
+  authorUserId     String             @map("author_user_id") @db.Uuid
+  side             String
+  rating           Int?               @db.SmallInt
+  strengths        String?
+  concerns         String?
+  decision         InterviewDecision?
+  sharedWithTalent String?            @map("shared_with_talent")
+  submittedAt      DateTime           @default(now()) @map("submitted_at") @db.Timestamp(6)
+
+  @@unique([interviewId, authorUserId])
+  @@map("interview_feedback")
+}
+
+model Placements {
+  id                       String          @id @default(uuid()) @db.Uuid
+  reference                String
+  companyId                String          @map("company_id") @db.Uuid
+  talentId                 String          @map("talent_id") @db.Uuid
+  requestId                String?         @map("request_id") @db.Uuid
+  shortlistItemId          String?         @map("shortlist_item_id") @db.Uuid
+  legalEntityId            String          @map("legal_entity_id") @db.Uuid
+  accountManagerId         String?         @map("account_manager_id") @db.Uuid
+  clientManagerContactId   String?         @map("client_manager_contact_id") @db.Uuid
+  engagementModel          EngagementModel @map("engagement_model")
+  jobRoleId                String?         @map("job_role_id") @db.Uuid
+  seniority                SeniorityLevel?
+  timeSharePct             Int             @default(100) @map("time_share_pct") @db.SmallInt
+  status                   PlacementStatus @default(dbgenerated("'draft'"))
+  startDate                DateTime?       @map("start_date") @db.Date
+  trialEndDate             DateTime?       @map("trial_end_date") @db.Date
+  trialDecision            String?         @map("trial_decision")
+  trialDecisionAt          DateTime?       @map("trial_decision_at") @db.Timestamp(6)
+  commitmentMonths         Int?            @map("commitment_months") @db.SmallInt
+  plannedEndDate           DateTime?       @map("planned_end_date") @db.Date
+  endDate                  DateTime?       @map("end_date") @db.Date
+  renewalDate              DateTime?       @map("renewal_date") @db.Date
+  noticeGivenAt            DateTime?       @map("notice_given_at") @db.Date
+  noticeGivenBy            NoticeParty?    @map("notice_given_by")
+  noticePeriodDays         Int             @default(30) @map("notice_period_days") @db.SmallInt
+  noticeEndDate            DateTime?       @map("notice_end_date") @db.Date
+  endReason                String?         @map("end_reason")
+  rateCardVersionId        String?         @map("rate_card_version_id") @db.Uuid
+  currency                 String          @default("EUR") @db.Char(3)
+  talentPay                Decimal         @map("talent_pay") @db.Decimal(12, 2)
+  talentDailyPay           Decimal?        @map("talent_daily_pay") @db.Decimal(12, 2)
+  targetMarginPct          Decimal?        @map("target_margin_pct") @db.Decimal(5, 2)
+  skillPremiumPct          Decimal         @default(0) @map("skill_premium_pct") @db.Decimal(5, 2)
+  clientPrice              Decimal         @map("client_price") @db.Decimal(12, 2)
+  priceOverridden          Boolean         @default(false) @map("price_overridden")
+  discountPct              Decimal         @default(0) @map("discount_pct") @db.Decimal(5, 2)
+  appliedDiscountCodes     String[]        @default([]) @map("applied_discount_codes")
+  hourlyRate               Decimal?        @map("hourly_rate") @db.Decimal(12, 2)
+  dailyRate                Decimal?        @map("daily_rate") @db.Decimal(12, 2)
+  clientPriceNet           Decimal?        @default(dbgenerated()) @map("client_price_net") @db.Decimal(12, 2)
+  marginAmount             Decimal?        @default(dbgenerated()) @map("margin_amount") @db.Decimal(12, 2)
+  marginPct                Decimal?        @default(dbgenerated()) @map("margin_pct") @db.Decimal(6, 2)
+  floorMarginPct           Decimal         @default(25) @map("floor_margin_pct") @db.Decimal(5, 2)
+  marginOverrideApprovedBy String?         @map("margin_override_approved_by") @db.Uuid
+  marginOverrideApprovedAt DateTime?       @map("margin_override_approved_at") @db.Timestamp(6)
+  marginOverrideReason     String?         @map("margin_override_reason")
+  replacesPlacementId      String?         @map("replaces_placement_id") @db.Uuid
+  replacedByPlacementId    String?         @map("replaced_by_placement_id") @db.Uuid
+  isFreeReplacement        Boolean         @default(false) @map("is_free_replacement")
+  replacementApprovedBy    String?         @map("replacement_approved_by") @db.Uuid
+  buyoutFee                Decimal?        @map("buyout_fee") @db.Decimal(12, 2)
+  buyoutSignedAt           DateTime?       @map("buyout_signed_at") @db.Date
+  workCalendarId           String?         @map("work_calendar_id") @db.Uuid
+  paidLeaveDaysPerMonth    Decimal         @default(2) @map("paid_leave_days_per_month") @db.Decimal(4, 2)
+  billPaidLeave            Boolean         @default(false) @map("bill_paid_leave")
+  clientToolsNotes         String?         @map("client_tools_notes")
+  kickoffAt                DateTime?       @map("kickoff_at") @db.Timestamp(6)
+  firstCheckinDate         DateTime?       @map("first_checkin_date") @db.Date
+  isAtRisk                 Boolean         @default(false) @map("is_at_risk")
+  createdAt                DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                DateTime        @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy                String?         @map("created_by") @db.Uuid
+
+  @@map("placements")
+}
+
+model StatusHistory {
+  id         BigInt   @id @db.BigInt
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id") @db.Uuid
+  fromStatus String?  @map("from_status")
+  toStatus   String   @map("to_status")
+  reason     String?
+  changedBy  String?  @map("changed_by") @db.Uuid
+  changedAt  DateTime @default(now()) @map("changed_at") @db.Timestamp(6)
+
+  @@map("status_history")
+}
+
+model PlacementStatusTransitions {
+  fromStatus PlacementStatus @map("from_status")
+  toStatus   PlacementStatus @map("to_status")
+
+  @@id([fromStatus, toStatus])
+  @@map("placement_status_transitions")
+}
+
+model PlacementOnboardingItems {
+  id          String    @id @default(uuid()) @db.Uuid
+  placementId String    @map("placement_id") @db.Uuid
+  code        String
+  label       String
+  ownerSide   String    @map("owner_side")
+  isDone      Boolean   @default(false) @map("is_done")
+  doneAt      DateTime? @map("done_at") @db.Timestamp(6)
+  doneBy      String?   @map("done_by") @db.Uuid
+  sortOrder   Int       @default(0) @map("sort_order") @db.SmallInt
+
+  @@unique([placementId, code])
+  @@map("placement_onboarding_items")
+}
+
+model CheckIns {
+  id               String      @id @default(uuid()) @db.Uuid
+  placementId      String      @map("placement_id") @db.Uuid
+  type             CheckinType
+  periodStart      DateTime    @map("period_start") @db.Date
+  respondentUserId String?     @map("respondent_user_id") @db.Uuid
+  score            Int         @db.SmallInt
+  comment          String?
+  dueAt            DateTime?   @map("due_at") @db.Date
+  submittedAt      DateTime?   @map("submitted_at") @db.Timestamp(6)
+
+  @@unique([placementId, type, periodStart])
+  @@map("check_ins")
+}
+
+model RiskFlags {
+  id             String         @id @default(uuid()) @db.Uuid
+  companyId      String?        @map("company_id") @db.Uuid
+  placementId    String?        @map("placement_id") @db.Uuid
+  checkInId      String?        @map("check_in_id") @db.Uuid
+  source         RiskFlagSource
+  description    String?
+  assignedTo     String?        @map("assigned_to") @db.Uuid
+  resolvedAt     DateTime?      @map("resolved_at") @db.Timestamp(6)
+  resolvedBy     String?        @map("resolved_by") @db.Uuid
+  resolutionNote String?        @map("resolution_note")
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("risk_flags")
+}
+
+model Absences {
+  id             String      @id @default(uuid()) @db.Uuid
+  placementId    String      @map("placement_id") @db.Uuid
+  type           AbsenceType
+  startDate      DateTime    @map("start_date") @db.Date
+  endDate        DateTime    @map("end_date") @db.Date
+  days           Decimal     @db.Decimal(5, 2)
+  isBillable     Boolean     @default(false) @map("is_billable")
+  isPaidToTalent Boolean     @default(true) @map("is_paid_to_talent")
+  declaredBy     String?     @map("declared_by") @db.Uuid
+  approvedBy     String?     @map("approved_by") @db.Uuid
+  approvedAt     DateTime?   @map("approved_at") @db.Timestamp(6)
+  note           String?
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("absences")
+}
+
+model TrialLosses {
+  id                   String   @id @default(uuid()) @db.Uuid
+  placementId          String   @map("placement_id") @db.Uuid
+  daysWorked           Decimal  @map("days_worked") @db.Decimal(5, 2)
+  talentCost           Decimal  @map("talent_cost") @db.Decimal(12, 2)
+  currency             String   @db.Char(3)
+  replacementRequestId String?  @map("replacement_request_id") @db.Uuid
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("trial_losses")
+}
+
+model BuyoutQuotes {
+  id                 String    @id @default(uuid()) @db.Uuid
+  placementId        String    @map("placement_id") @db.Uuid
+  monthsSinceStart   Int       @map("months_since_start") @db.SmallInt
+  buyoutTierId       String?   @map("buyout_tier_id") @db.Uuid
+  multiplier         Decimal   @db.Decimal(5, 2)
+  monthlyClientPrice Decimal   @map("monthly_client_price") @db.Decimal(12, 2)
+  fee                Decimal?  @default(dbgenerated()) @db.Decimal(12, 2)
+  currency           String    @db.Char(3)
+  requestedBy        String?   @map("requested_by") @db.Uuid
+  status             String    @default("quoted")
+  validUntil         DateTime? @map("valid_until") @db.Date
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("buyout_quotes")
+}
+
+model ProjectMilestones {
+  id            String    @id @default(uuid()) @db.Uuid
+  placementId   String    @map("placement_id") @db.Uuid
+  name          String
+  pctOfQuote    Decimal?  @map("pct_of_quote") @db.Decimal(5, 2)
+  amount        Decimal   @db.Decimal(12, 2)
+  dueDate       DateTime? @map("due_date") @db.Date
+  deliveredAt   DateTime? @map("delivered_at") @db.Timestamp(6)
+  acceptedAt    DateTime? @map("accepted_at") @db.Timestamp(6)
+  invoiceLineId String?   @map("invoice_line_id") @db.Uuid
+  sortOrder     Int       @default(0) @map("sort_order") @db.SmallInt
+
+  @@map("project_milestones")
+}
+
+model ContractTemplates {
+  id            String       @id @default(uuid()) @db.Uuid
+  type          ContractType
+  name          String
+  language      UiLanguage
+  legalEntityId String?      @map("legal_entity_id") @db.Uuid
+  isActive      Boolean      @default(true) @map("is_active")
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@unique([type, language, legalEntityId])
+  @@map("contract_templates")
+}
+
+model ContractTemplateVersions {
+  id          String    @id @default(uuid()) @db.Uuid
+  templateId  String    @map("template_id") @db.Uuid
+  version     Int       @db.Integer
+  body        String
+  mergeFields String[]  @default([]) @map("merge_fields")
+  publishedAt DateTime? @map("published_at") @db.Timestamp(6)
+  createdBy   String?   @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@unique([templateId, version])
+  @@map("contract_template_versions")
+}
+
+model Contracts {
+  id                 String          @id @default(uuid()) @db.Uuid
+  type               ContractType
+  templateVersionId  String?         @map("template_version_id") @db.Uuid
+  legalEntityId      String?         @map("legal_entity_id") @db.Uuid
+  placementId        String?         @map("placement_id") @db.Uuid
+  companyId          String?         @map("company_id") @db.Uuid
+  talentId           String?         @map("talent_id") @db.Uuid
+  parentContractId   String?         @map("parent_contract_id") @db.Uuid
+  title              String
+  fileId             String?         @map("file_id") @db.Uuid
+  signedFileId       String?         @map("signed_file_id") @db.Uuid
+  signatureProvider  String?         @map("signature_provider")
+  providerEnvelopeId String?         @map("provider_envelope_id")
+  signatureStatus    SignatureStatus @default(dbgenerated("'draft'")) @map("signature_status")
+  sentAt             DateTime?       @map("sent_at") @db.Timestamp(6)
+  reminderSentAt     DateTime?       @map("reminder_sent_at") @db.Timestamp(6)
+  fullySignedAt      DateTime?       @map("fully_signed_at") @db.Timestamp(6)
+  effectiveDate      DateTime?       @map("effective_date") @db.Date
+  expiryDate         DateTime?       @map("expiry_date") @db.Date
+  nonSolicitMonths   Int?            @default(12) @map("non_solicit_months") @db.SmallInt
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt          DateTime        @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy          String?         @map("created_by") @db.Uuid
+
+  @@map("contracts")
+}
+
+model ContractSignatories {
+  id           String    @id @default(uuid()) @db.Uuid
+  contractId   String    @map("contract_id") @db.Uuid
+  party        String
+  userId       String?   @map("user_id") @db.Uuid
+  name         String
+  email        String
+  signingOrder Int       @default(1) @map("signing_order") @db.SmallInt
+  signedAt     DateTime? @map("signed_at") @db.Timestamp(6)
+  declinedAt   DateTime? @map("declined_at") @db.Timestamp(6)
+  ip           String?
+
+  @@map("contract_signatories")
+}
+
+model Timesheets {
+  id               String          @id @default(uuid()) @db.Uuid
+  placementId      String          @map("placement_id") @db.Uuid
+  periodMonth      DateTime        @map("period_month") @db.Date
+  status           TimesheetStatus @default(dbgenerated("'draft'"))
+  totalHours       Decimal         @default(0) @map("total_hours") @db.Decimal(7, 2)
+  totalDays        Decimal         @default(0) @map("total_days") @db.Decimal(5, 2)
+  submittedAt      DateTime?       @map("submitted_at") @db.Timestamp(6)
+  autoApproveAt    DateTime?       @map("auto_approve_at") @db.Timestamp(6)
+  approvedBy       String?         @map("approved_by") @db.Uuid
+  approvedAt       DateTime?       @map("approved_at") @db.Timestamp(6)
+  rejectedBy       String?         @map("rejected_by") @db.Uuid
+  rejectedAt       DateTime?       @map("rejected_at") @db.Timestamp(6)
+  rejectionComment String?         @map("rejection_comment")
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime        @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@unique([placementId, periodMonth])
+  @@map("timesheets")
+}
+
+model TimesheetEntries {
+  id          String   @id @default(uuid()) @db.Uuid
+  timesheetId String   @map("timesheet_id") @db.Uuid
+  workDate    DateTime @map("work_date") @db.Date
+  hours       Decimal  @db.Decimal(4, 2)
+  projectTask String?  @map("project_task")
+  note        String?
+
+  @@unique([timesheetId, workDate, projectTask])
+  @@map("timesheet_entries")
+}
+
+model InvoiceNumberSequences {
+  legalEntityId String      @map("legal_entity_id") @db.Uuid
+  kind          InvoiceKind
+  fiscalYear    Int         @map("fiscal_year") @db.SmallInt
+  lastNumber    Int         @default(0) @map("last_number") @db.Integer
+
+  @@id([legalEntityId, kind, fiscalYear])
+  @@map("invoice_number_sequences")
+}
+
+model Invoices {
+  id                     String        @id @default(uuid()) @db.Uuid
+  kind                   InvoiceKind   @default(dbgenerated("'invoice'"))
+  legalEntityId          String        @map("legal_entity_id") @db.Uuid
+  companyId              String        @map("company_id") @db.Uuid
+  creditedInvoiceId      String?       @map("credited_invoice_id") @db.Uuid
+  fiscalYear             Int?          @map("fiscal_year") @db.SmallInt
+  sequenceNumber         Int?          @map("sequence_number") @db.Integer
+  number                 String?
+  status                 InvoiceStatus @default(dbgenerated("'draft'"))
+  language               UiLanguage    @default(dbgenerated("'en'"))
+  periodStart            DateTime?     @map("period_start") @db.Date
+  periodEnd              DateTime?     @map("period_end") @db.Date
+  issueDate              DateTime?     @map("issue_date") @db.Date
+  dueDate                DateTime?     @map("due_date") @db.Date
+  currency               String        @db.Char(3)
+  subtotal               Decimal       @default(0) @db.Decimal(14, 2)
+  discountTotal          Decimal       @default(0) @map("discount_total") @db.Decimal(14, 2)
+  vatRate                Decimal       @default(0) @map("vat_rate") @db.Decimal(5, 2)
+  vatAmount              Decimal       @default(0) @map("vat_amount") @db.Decimal(14, 2)
+  total                  Decimal       @default(0) @db.Decimal(14, 2)
+  amountPaid             Decimal       @default(0) @map("amount_paid") @db.Decimal(14, 2)
+  balanceDue             Decimal?      @default(dbgenerated()) @map("balance_due") @db.Decimal(14, 2)
+  reverseCharge          Boolean       @default(true) @map("reverse_charge")
+  taxMention             String?       @map("tax_mention")
+  billingSnapshot        Json          @default("{}") @map("billing_snapshot") @db.JsonB
+  bankSnapshot           Json          @default("{}") @map("bank_snapshot") @db.JsonB
+  notes                  String?
+  pdfFileId              String?       @map("pdf_file_id") @db.Uuid
+  generatedAutomatically Boolean       @default(false) @map("generated_automatically")
+  issuedBy               String?       @map("issued_by") @db.Uuid
+  issuedAt               DateTime?     @map("issued_at") @db.Timestamp(6)
+  sentAt                 DateTime?     @map("sent_at") @db.Timestamp(6)
+  paidAt                 DateTime?     @map("paid_at") @db.Timestamp(6)
+  voidedAt               DateTime?     @map("voided_at") @db.Timestamp(6)
+  createdAt              DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt              DateTime      @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy              String?       @map("created_by") @db.Uuid
+
+  @@unique([legalEntityId, kind, fiscalYear, sequenceNumber])
+  @@map("invoices")
+}
+
+model InvoiceLines {
+  id          String          @id @default(uuid()) @db.Uuid
+  invoiceId   String          @map("invoice_id") @db.Uuid
+  placementId String?         @map("placement_id") @db.Uuid
+  timesheetId String?         @map("timesheet_id") @db.Uuid
+  kind        InvoiceLineKind
+  description String
+  periodStart DateTime?       @map("period_start") @db.Date
+  periodEnd   DateTime?       @map("period_end") @db.Date
+  quantity    Decimal         @default(1) @db.Decimal(10, 2)
+  unit        String          @default("month")
+  unitPrice   Decimal         @map("unit_price") @db.Decimal(12, 2)
+  discountPct Decimal         @default(0) @map("discount_pct") @db.Decimal(5, 2)
+  amount      Decimal         @db.Decimal(14, 2)
+  talentCost  Decimal?        @map("talent_cost") @db.Decimal(14, 2)
+  sortOrder   Int             @default(0) @map("sort_order") @db.SmallInt
+
+  @@map("invoice_lines")
+}
+
+model Payments {
+  id                     String        @id @default(uuid()) @db.Uuid
+  invoiceId              String        @map("invoice_id") @db.Uuid
+  receivedOn             DateTime      @map("received_on") @db.Date
+  amount                 Decimal       @db.Decimal(14, 2)
+  currency               String        @db.Char(3)
+  method                 PaymentMethod
+  fees                   Decimal       @default(0) @db.Decimal(12, 2)
+  fxRate                 Decimal?      @map("fx_rate") @db.Decimal(18, 8)
+  amountInEntityCurrency Decimal?      @map("amount_in_entity_currency") @db.Decimal(14, 2)
+  reference              String?
+  providerPaymentId      String?       @map("provider_payment_id")
+  recordedBy             String?       @map("recorded_by") @db.Uuid
+  createdAt              DateTime      @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("payments")
+}
+
+model InvoiceReminders {
+  id        String   @id @default(uuid()) @db.Uuid
+  invoiceId String   @map("invoice_id") @db.Uuid
+  stage     String
+  sentAt    DateTime @default(now()) @map("sent_at") @db.Timestamp(6)
+
+  @@unique([invoiceId, stage])
+  @@map("invoice_reminders")
+}
+
+model Payouts {
+  id                String         @id @default(uuid()) @db.Uuid
+  talentId          String         @map("talent_id") @db.Uuid
+  legalEntityId     String?        @map("legal_entity_id") @db.Uuid
+  periodMonth       DateTime       @map("period_month") @db.Date
+  status            PayoutStatus   @default(dbgenerated("'pending'"))
+  currency          String         @default("EUR") @db.Char(3)
+  grossAmount       Decimal        @default(0) @map("gross_amount") @db.Decimal(14, 2)
+  adjustmentsTotal  Decimal        @default(0) @map("adjustments_total") @db.Decimal(14, 2)
+  netAmount         Decimal        @default(0) @map("net_amount") @db.Decimal(14, 2)
+  paidCurrency      String?        @map("paid_currency") @db.Char(3)
+  fxRate            Decimal?       @map("fx_rate") @db.Decimal(18, 8)
+  paidAmount        Decimal?       @map("paid_amount") @db.Decimal(14, 2)
+  fees              Decimal        @default(0) @db.Decimal(12, 2)
+  method            PaymentMethod?
+  transferReference String?        @map("transfer_reference")
+  dueDate           DateTime?      @map("due_date") @db.Date
+  approvedBy        String?        @map("approved_by") @db.Uuid
+  approvedAt        DateTime?      @map("approved_at") @db.Timestamp(6)
+  paidAt            DateTime?      @map("paid_at") @db.Timestamp(6)
+  statementFileId   String?        @map("statement_file_id") @db.Uuid
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime       @default(now()) @map("updated_at") @db.Timestamp(6)
+  createdBy         String?        @map("created_by") @db.Uuid
+
+  @@unique([talentId, periodMonth])
+  @@map("payouts")
+}
+
+model PayoutLines {
+  id          String         @id @default(uuid()) @db.Uuid
+  payoutId    String         @map("payout_id") @db.Uuid
+  placementId String?        @map("placement_id") @db.Uuid
+  kind        PayoutLineKind
+  description String?
+  days        Decimal?       @db.Decimal(5, 2)
+  dailyRate   Decimal?       @map("daily_rate") @db.Decimal(12, 2)
+  amount      Decimal        @db.Decimal(14, 2)
+  sortOrder   Int            @default(0) @map("sort_order") @db.SmallInt
+
+  @@map("payout_lines")
+}
+
+model ReferralClicks {
+  id          BigInt   @id @db.BigInt
+  referrerId  String   @map("referrer_id") @db.Uuid
+  visitorId   String?  @map("visitor_id")
+  landingPage String?  @map("landing_page")
+  ip          String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("referral_clicks")
+}
+
+model Referrals {
+  id                   String         @id @default(uuid()) @db.Uuid
+  referrerId           String         @map("referrer_id") @db.Uuid
+  referralKind         String         @default("client") @map("referral_kind")
+  companyId            String?        @map("company_id") @db.Uuid
+  leadId               String?        @map("lead_id") @db.Uuid
+  referredTalentId     String?        @map("referred_talent_id") @db.Uuid
+  introCompanyName     String?        @map("intro_company_name")
+  introContactName     String?        @map("intro_contact_name")
+  introContactEmail    String?        @map("intro_contact_email")
+  introNeed            String?        @map("intro_need")
+  status               ReferralStatus @default(dbgenerated("'submitted'"))
+  attributedAt         DateTime       @default(now()) @map("attributed_at") @db.Timestamp(6)
+  attributionExpiresAt DateTime       @default(dbgenerated("(now() + interval '90 days')")) @map("attribution_expires_at") @db.Timestamp(6)
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt            DateTime       @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("referrals")
+}
+
+model ReferralRewards {
+  id                String         @id @default(uuid()) @db.Uuid
+  referralId        String         @map("referral_id") @db.Uuid
+  rewardRuleId      String?        @map("reward_rule_id") @db.Uuid
+  rewardType        RewardType     @map("reward_type")
+  amount            Decimal        @db.Decimal(12, 2)
+  currency          String         @default("EUR") @db.Char(3)
+  status            RewardStatus   @default(dbgenerated("'pending'"))
+  paidInvoicesCount Int            @default(0) @map("paid_invoices_count") @db.SmallInt
+  trialPassed       Boolean        @default(false) @map("trial_passed")
+  payableAt         DateTime?      @map("payable_at") @db.Timestamp(6)
+  paidAt            DateTime?      @map("paid_at") @db.Timestamp(6)
+  paymentMethod     PaymentMethod? @map("payment_method")
+  paymentReference  String?        @map("payment_reference")
+  fees              Decimal        @default(0) @db.Decimal(12, 2)
+  receiptFileId     String?        @map("receipt_file_id") @db.Uuid
+  cancelledAt       DateTime?      @map("cancelled_at") @db.Timestamp(6)
+  cancelReason      String?        @map("cancel_reason")
+  approvedBy        String?        @map("approved_by") @db.Uuid
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime       @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("referral_rewards")
+}
+
+model Notes {
+  id         String   @id @default(uuid()) @db.Uuid
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id") @db.Uuid
+  body       String
+  isInternal Boolean  @default(true) @map("is_internal")
+  authorId   String   @map("author_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@map("notes")
+}
+
+model Tasks {
+  id          String     @id @default(uuid()) @db.Uuid
+  entityType  String?    @map("entity_type")
+  entityId    String?    @map("entity_id") @db.Uuid
+  title       String
+  description String?
+  dueAt       DateTime?  @map("due_at") @db.Timestamp(6)
+  status      TaskStatus @default(dbgenerated("'open'"))
+  assigneeId  String?    @map("assignee_id") @db.Uuid
+  completedAt DateTime?  @map("completed_at") @db.Timestamp(6)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  createdBy   String?    @map("created_by") @db.Uuid
+
+  @@map("tasks")
+}
+
+model Activities {
+  id           BigInt   @id @db.BigInt
+  entityType   String   @map("entity_type")
+  entityId     String   @map("entity_id") @db.Uuid
+  activityType String   @map("activity_type")
+  summary      String
+  metadata     Json     @default("{}") @db.JsonB
+  actorId      String?  @map("actor_id") @db.Uuid
+  occurredAt   DateTime @default(now()) @map("occurred_at") @db.Timestamp(6)
+
+  @@map("activities")
+}
+
+model EntityAttachments {
+  id           String       @id @default(uuid()) @db.Uuid
+  entityType   String       @map("entity_type")
+  entityId     String       @map("entity_id") @db.Uuid
+  fileId       String       @map("file_id") @db.Uuid
+  documentType DocumentType @default(dbgenerated("'other'")) @map("document_type")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("entity_attachments")
+}
+
+model CompanyTags {
+  companyId String @map("company_id") @db.Uuid
+  tagId     String @map("tag_id") @db.Uuid
+
+  @@id([companyId, tagId])
+  @@map("company_tags")
+}
+
+model SavedViews {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  module    String
+  name      String
+  filters   Json     @default("{}") @db.JsonB
+  sort      Json     @default("{}") @db.JsonB
+  columns   String[]
+  isShared  Boolean  @default(false) @map("is_shared")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@unique([userId, module, name])
+  @@map("saved_views")
+}
+
+model EmailTemplates {
+  id        String     @id @default(uuid()) @db.Uuid
+  code      String
+  language  UiLanguage
+  subject   String
+  bodyHtml  String     @map("body_html")
+  bodyText  String?    @map("body_text")
+  variables String[]   @default([])
+  isActive  Boolean    @default(true) @map("is_active")
+  updatedBy String?    @map("updated_by") @db.Uuid
+  updatedAt DateTime   @default(now()) @map("updated_at") @db.Timestamp(6)
+
+  @@unique([code, language])
+  @@map("email_templates")
+}
+
+model Notifications {
+  id                String              @id @default(uuid()) @db.Uuid
+  userId            String?             @map("user_id") @db.Uuid
+  recipientEmail    String?             @map("recipient_email")
+  type              String
+  title             String?
+  payload           Json                @default("{}") @db.JsonB
+  linkUrl           String?             @map("link_url")
+  channel           NotificationChannel
+  emailTemplateId   String?             @map("email_template_id") @db.Uuid
+  providerMessageId String?             @map("provider_message_id")
+  sentAt            DateTime?           @map("sent_at") @db.Timestamp(6)
+  failedAt          DateTime?           @map("failed_at") @db.Timestamp(6)
+  error             String?
+  readAt            DateTime?           @map("read_at") @db.Timestamp(6)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("notifications")
+}
+
+model NotificationPreferences {
+  userId  String              @map("user_id") @db.Uuid
+  type    String
+  channel NotificationChannel
+  enabled Boolean             @default(true)
+
+  @@id([userId, type, channel])
+  @@map("notification_preferences")
+}
+
+model ScheduledJobsLog {
+  id             BigInt    @id @db.BigInt
+  jobName        String    @map("job_name")
+  runForPeriod   DateTime? @map("run_for_period") @db.Date
+  startedAt      DateTime  @default(now()) @map("started_at") @db.Timestamp(6)
+  finishedAt     DateTime? @map("finished_at") @db.Timestamp(6)
+  status         String    @default("running")
+  itemsProcessed Int       @default(0) @map("items_processed") @db.Integer
+  error          String?
+
+  @@map("scheduled_jobs_log")
+}
+
+model AuditLog {
+  id         BigInt      @id @db.BigInt
+  userId     String?     @map("user_id") @db.Uuid
+  entityType String      @map("entity_type")
+  entityId   String?     @map("entity_id") @db.Uuid
+  action     AuditAction
+  oldValues  Json?       @map("old_values") @db.JsonB
+  newValues  Json?       @map("new_values") @db.JsonB
+  ip         String?
+  userAgent  String?     @map("user_agent")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("audit_log")
 }
