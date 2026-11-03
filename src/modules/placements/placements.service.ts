@@ -47,6 +47,21 @@ export class PlacementsService {
     return `PLC-${year}-${random}`;
   }
 
+  private addWorkingDays(startDate: Date, workingDays: number): Date {
+    const result = new Date(startDate);
+    let remaining = workingDays;
+
+    while (remaining > 0) {
+      result.setUTCDate(result.getUTCDate() + 1);
+      const day = result.getUTCDay();
+      if (day !== 0 && day !== 6) {
+        remaining -= 1;
+      }
+    }
+
+    return result;
+  }
+
   /**
    * Helper to verify talent capacity (FR-TAL-02: Total capacity <= 100%).
    */
@@ -125,7 +140,12 @@ export class PlacementsService {
     const floorMarginPct = new Prisma.Decimal(25);
 
     // Margin below floor requires Super admin approval
-    if (marginPct.lessThan(floorMarginPct) && !dto.marginOverrideApprovedBy) {
+    if (
+      marginPct.lessThan(floorMarginPct) &&
+      (!dto.marginOverrideApprovedBy ||
+        currentUser.role !== UserRole.super_admin ||
+        dto.marginOverrideApprovedBy !== currentUser.id)
+    ) {
       throw new UnprocessableEntityException({
         code: "FR-PRICE-02",
         message: `Placement margin (${round2(marginPct).toString()}%) is below the 25% floor and requires Super admin approval.`,
@@ -147,7 +167,7 @@ export class PlacementsService {
 
     // 6. Dates calculation (FR-PLC-01: 10 working days ~ 14 calendar days trial)
     const startDate = dto.startDate ? new Date(dto.startDate) : new Date();
-    const trialEndDate = new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const trialEndDate = this.addWorkingDays(startDate, 10);
 
     const reference = this.generateReference();
 
@@ -305,13 +325,30 @@ export class PlacementsService {
       await this.verifyTalentCapacity(existing.talentId, existing.timeSharePct, existing.id);
     }
 
+    const transitionData: Prisma.PlacementsUpdateInput = {
+      status: dto.status,
+      endReason: dto.reason || existing.endReason,
+    };
+
+    if (dto.status === PlacementStatus.in_trial) {
+      const startDate = existing.startDate ?? new Date();
+      transitionData.startDate = startDate;
+      transitionData.trialEndDate = existing.trialEndDate ?? this.addWorkingDays(startDate, 10);
+    }
+
+    if (
+      dto.status === PlacementStatus.ended ||
+      dto.status === PlacementStatus.ended_in_trial ||
+      dto.status === PlacementStatus.cancelled ||
+      dto.status === PlacementStatus.bought_out
+    ) {
+      transitionData.endDate = existing.endDate ?? new Date();
+    }
+
     await this.prisma.withUserContext(currentUser, async (tx) => {
       await tx.placements.update({
         where: { id },
-        data: {
-          status: dto.status,
-          endReason: dto.reason || existing.endReason,
-        },
+        data: transitionData,
       });
     });
 

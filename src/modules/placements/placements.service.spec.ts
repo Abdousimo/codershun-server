@@ -44,7 +44,14 @@ describe("PlacementsService", () => {
         findUnique: jest.fn().mockResolvedValue({ name: "Acme Corp" }),
       },
       talents: {
-        findUnique: jest.fn().mockResolvedValue({
+        findUnique: jest.fn<() => Promise<{
+          id: string;
+          firstName: string;
+          lastName: string;
+          email: string;
+          publicSlug: string;
+          headline: string;
+        }>>().mockResolvedValue({
           id: "talent-1",
           firstName: "Yacine",
           lastName: "Brahimi",
@@ -172,6 +179,27 @@ describe("PlacementsService", () => {
   });
 
   describe("FR-PRICE-02: Margin Floor (25%) Enforcement", () => {
+    it("FR-PRICE-02: rejects a low-margin override submitted by a non-Super admin", async () => {
+      mockPrisma.placements.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.createPlacement(
+          {
+            companyId: "comp-1",
+            talentId: "talent-1",
+            talentPay: 1600,
+            clientPrice: 2000,
+            timeSharePct: 100,
+            engagementModel: EngagementModel.dedicated_developer,
+            marginOverrideApprovedBy: recruiterUser.id,
+          },
+          recruiterUser,
+        ),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({ code: "FR-PRICE-02" }),
+      });
+    });
+
     it("FR-PRICE-02: rejects placement with margin under 25% without Super admin approval", async () => {
       // Talent pay €1,600 with Client price €2,000 -> margin = (2000 - 1600) / 2000 = 20% < 25%
       mockPrisma.placements.findMany.mockResolvedValue([]);
@@ -209,6 +237,46 @@ describe("PlacementsService", () => {
           }),
         );
       }
+    });
+
+    describe("FR-PLC-01: Trial lifecycle dates", () => {
+      it("FR-PLC-01: sets a ten-working-day trial when entering in_trial", async () => {
+        mockPrisma.placements.findUnique.mockResolvedValue({
+          id: "plc-pending",
+          reference: "PLC-2026-1021",
+          talentId: "talent-1",
+          status: PlacementStatus.pending_start,
+          timeSharePct: 100,
+          startDate: new Date("2026-11-02T00:00:00.000Z"),
+          trialEndDate: null,
+          talentPay: new Prisma.Decimal("1200.00"),
+          clientPrice: new Prisma.Decimal("2000.00"),
+          discountPct: new Prisma.Decimal("0.00"),
+          floorMarginPct: new Prisma.Decimal("25.00"),
+          currency: "EUR",
+          isAtRisk: false,
+          noticePeriodDays: 30,
+          engagementModel: EngagementModel.dedicated_developer,
+          createdAt: new Date("2026-11-01T00:00:00.000Z"),
+          updatedAt: new Date("2026-11-01T00:00:00.000Z"),
+        });
+        mockPrisma.placementStatusTransitions.findUnique.mockResolvedValue({});
+
+        await service.transitionStatus(
+          "plc-pending",
+          { status: PlacementStatus.in_trial },
+          recruiterUser,
+        );
+
+        expect(mockPrisma.placements.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              status: PlacementStatus.in_trial,
+              trialEndDate: new Date("2026-11-16T00:00:00.000Z"),
+            }),
+          }),
+        );
+      });
     });
 
     it("FR-PRICE-02: accepts placement with margin under 25% when Super admin override is provided", async () => {
@@ -336,6 +404,7 @@ describe("PlacementsService", () => {
             talentPay: 1200,
             clientPrice: 2000,
             discountPct: 15, // 15% > 12% cap
+            timeSharePct: 100,
             engagementModel: EngagementModel.dedicated_developer,
           },
           recruiterUser,
@@ -350,6 +419,7 @@ describe("PlacementsService", () => {
             talentPay: 1200,
             clientPrice: 2000,
             discountPct: 15,
+            timeSharePct: 100,
             engagementModel: EngagementModel.dedicated_developer,
           },
           recruiterUser,
@@ -434,4 +504,3 @@ describe("PlacementsService", () => {
     });
   });
 });
-

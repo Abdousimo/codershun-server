@@ -19,6 +19,12 @@ import { PublicFormsModule } from "./modules/public-forms/public-forms.module";
 import { TalentsModule } from "./modules/talents/talents.module";
 import { MatchingModule } from "./modules/matching/matching.module";
 import { PlacementsModule } from "./modules/placements/placements.module";
+import { ContractsModule } from "./modules/contracts/contracts.module";
+import { InvoicesModule } from "./modules/invoices/invoices.module";
+import { PayoutsModule } from "./modules/payouts/payouts.module";
+import { ReferralsModule } from "./modules/referrals/referrals.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
+import { AuditDashboardModule } from "./modules/audit-dashboard/audit-dashboard.module";
 
 @Module({
   imports: [
@@ -39,6 +45,12 @@ import { PlacementsModule } from "./modules/placements/placements.module";
     TalentsModule,
     MatchingModule,
     PlacementsModule,
+    ContractsModule,
+    InvoicesModule,
+    PayoutsModule,
+    ReferralsModule,
+    NotificationsModule,
+    AuditDashboardModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessTokenGuard },

@@ -49,29 +49,29 @@ Legend: **CDC** = sections to read · **Tables** = main tables · **Rules** = se
   Tables: `talent_requests`, `talent_request_skills`, `talent_request_languages`, `shortlists`,
   `shortlist_items`. Manual search with filters, match score (weights from settings),
   48 h SLA deadline, publish shortlist, **anonymised PDF export**. Rules: FR-REQ-01, FR-TAL-01, FR-SEC-01.
-- [ ] **1.7 Placements** — CDC 5.2–5.5, 6.3, 11.2 "Placements".
+- [x] **1.7 Placements** — CDC 5.2–5.5, 6.3, 11.2 "Placements".
   Tables: `placements`, `placement_onboarding_items`, `check_ins`, `risk_flags`, `absences`,
   `trial_losses`, `buyout_quotes`, `project_milestones`, `status_history`.
   Create from won request with pricing snapshot, margin warning < 30 % and block < 25 %,
   Super admin override, status transitions, trial keep/replace, replacement, notice, buy-out.
   Rules: FR-PRICE-01..04, FR-TAL-02, FR-PLC-01..04, FR-SEC-02.
-- [ ] **1.8 Contracts (MVP = upload signed PDFs)** — CDC 11.2 "Contracts".
+- [x] **1.8 Contracts (MVP = upload signed PDFs)** — CDC 11.2 "Contracts".
   Tables: `contracts`, `contract_signatories`. Upload, link to placement/company/talent,
   track dates (start, end, renewal, notice, non-solicit), onboarding checklist sync.
-- [ ] **1.9 Invoices & payments (MVP = manual + PDF)** — CDC 5.1, 5.8, 6.4, 11.2 "Invoices".
+- [x] **1.9 Invoices & payments (MVP = manual + PDF)** — CDC 5.1, 5.8, 6.4, 11.2 "Invoices".
   Tables: `invoices`, `invoice_lines`, `payments`, `invoice_reminders`, `invoice_number_sequences`.
   Create draft with lines from placements, issue (DB assigns number), PDF EN/FR, credit notes,
   record payments with fees, aging report. Rules: FR-BILL-01..03.
-- [ ] **1.10 Payouts (MVP = manual record)** — CDC 6.4, 11.2 "Payouts". Tables: `payouts`,
+- [x] **1.10 Payouts (MVP = manual record)** — CDC 6.4, 11.2 "Payouts". Tables: `payouts`,
   `payout_lines`. Rules: FR-PAY-01, FR-PAY-02.
-- [ ] **1.11 Referrals (MVP = manual)** — CDC 5.6, 6.5, 7.3. Tables: `referrers`, `referrals`,
+- [x] **1.11 Referrals (MVP = manual)** — CDC 5.6, 6.5, 7.3. Tables: `referrers`, `referrals`,
   `referral_clicks`, `referral_rewards`. Rules: FR-REF-01.
-- [ ] **1.12 Notifications & emails** — CDC 13. Tables: `email_templates`, `notifications`,
+- [x] **1.12 Notifications & emails** — CDC 13. Tables: `email_templates`, `notifications`,
   `notification_preferences`. Email provider adapter (Resend/Postmark/Brevo), in-app list, EN/FR.
-- [ ] **1.13 Audit log & dashboard** — CDC 11.2 "Dashboard / Audit log". Read endpoints on
+- [x] **1.13 Audit log & dashboard** — CDC 11.2 "Dashboard / Audit log". Read endpoints on
   `audit_log`, `status_history`; KPI counters from `v_kpi_mrr`, `v_invoice_aging`,
   `v_placement_economics`.
-- [ ] **1.14 MVP acceptance pass** — run every item of CDC 17.2 as an e2e test.
+- [ ] **1.14 MVP acceptance pass** — acceptance regression coverage added; full CDC 17.2 e2e execution remains blocked by the existing Files storage compilation issue.
 
 ## Phase 2 — Portals & automation (after MVP acceptance)
 

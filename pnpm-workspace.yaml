@@ -1,6 +1,11 @@
 packages:
   - '.'
 allowBuilds:
+  '@parcel/watcher': false
   '@prisma/engines': false
+  '@scarf/scarf': false
+  argon2: false
   esbuild: false
   prisma: false
+minimumReleaseAgeExclude:
+  - argon2@0.45.2
