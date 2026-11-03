@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
-import { InvoiceKind, InvoiceStatus, PaymentMethod, UserRole } from "../../generated/prisma/client";
+import { InvoiceKind, InvoiceStatus, PaymentMethod, Prisma, UserRole } from "../../generated/prisma/client";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
 import { InvoicesService } from "./invoices.service";
 
@@ -104,7 +104,7 @@ describe("InvoicesService", () => {
 
     expect(prisma.invoiceLines.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ amount: "1800" }),
+        data: expect.objectContaining({ amount: new Prisma.Decimal("1800") }),
       }),
     );
   });
