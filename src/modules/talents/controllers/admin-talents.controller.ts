@@ -208,3 +208,4 @@ export class AdminTalentsController {
     return this.talentsService.addPortfolioItem(id, dto, user);
   }
 }
+

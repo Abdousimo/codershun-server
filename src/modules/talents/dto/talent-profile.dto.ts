@@ -281,3 +281,4 @@ export class BlacklistTalentDto {
   @IsNotEmpty()
   blacklistReason!: string;
 }
+

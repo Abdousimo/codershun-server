@@ -93,3 +93,4 @@ export class QueryShowcaseDto {
   @IsString()
   skill?: string;
 }
+

@@ -17,6 +17,7 @@ import { FilesModule } from "./modules/files/files.module";
 import { CrmModule } from "./modules/crm/crm.module";
 import { PublicFormsModule } from "./modules/public-forms/public-forms.module";
 import { TalentsModule } from "./modules/talents/talents.module";
+import { MatchingModule } from "./modules/matching/matching.module";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { TalentsModule } from "./modules/talents/talents.module";
     CrmModule,
     PublicFormsModule,
     TalentsModule,
+    MatchingModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessTokenGuard },

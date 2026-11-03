@@ -45,7 +45,7 @@ Legend: **CDC** = sections to read · **Tables** = main tables · **Rules** = se
   documents/tags, `vetting_steps`, `scorecards`, `scorecard_scores`.
   Stage moves, scorecards, approval (seniority, agreed pay, showcase), duplicate detection,
   re-apply delay, blacklist. Rules: FR-TAL-03, FR-TAL-04, FR-SEC-01.
-- [ ] **1.6 Talent requests, matching & shortlists** — CDC 6.2, 11.2 "Talent requests / Matching".
+- [x] **1.6 Talent requests, matching & shortlists** — CDC 6.2, 11.2 "Talent requests / Matching".
   Tables: `talent_requests`, `talent_request_skills`, `talent_request_languages`, `shortlists`,
   `shortlist_items`. Manual search with filters, match score (weights from settings),
   48 h SLA deadline, publish shortlist, **anonymised PDF export**. Rules: FR-REQ-01, FR-TAL-01, FR-SEC-01.

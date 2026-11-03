@@ -12,3 +12,4 @@ import { TalentsService } from "./talents.service";
   exports: [TalentsService],
 })
 export class TalentsModule {}
+

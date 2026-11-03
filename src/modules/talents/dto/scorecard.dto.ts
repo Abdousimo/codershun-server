@@ -74,3 +74,4 @@ export class CreateScorecardDto {
   @Type(() => ScorecardCriterionScoreDto)
   scores!: ScorecardCriterionScoreDto[];
 }
+

@@ -21,3 +21,4 @@ export class TalentsController {
     return this.talentsService.getPublicShowcase(query);
   }
 }
+
