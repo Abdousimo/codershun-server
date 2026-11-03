@@ -19,7 +19,7 @@ Legend: **CDC** = sections to read · **Tables** = main tables · **Rules** = se
   Email + password (Argon2), magic link, email verification, password reset, JWT access +
   refresh (rotated, stored hashed in `user_sessions`), TOTP 2FA (mandatory for staff),
   login rate limiting, `@Roles()` + `RolesGuard`, `@CurrentUser()`, lockout after failed logins.
-- [ ] **0.4 Users & staff** — CDC 11.2 "Users & roles". Invite staff, assign role, deactivate,
+- [x] **0.4 Users & staff** — CDC 11.2 "Users & roles". Invite staff, assign role, deactivate,
   staff profile (WhatsApp, calendar link), `GET /me`.
 
 ## Phase 1 — MVP back-office

@@ -18,8 +18,8 @@ statuses in section 6, permissions in sections 3.2 and 11.3, acceptance criteria
   - `0.1 Repo audit`
   - `0.2 Prisma alignment & foundations` (PrismaService with `withUserContext()`, PrismaExceptionFilter, ValidationPipe, Swagger at `/api/docs`, typed ConfigModule, `/api/v1/health` endpoint, Jest unit/e2e runner, `db:test:reset` script, unsafe `resources` backdoor removed)
   - `0.3 Auth review & fix` (Argon2id password hashing, `@nestjs/jwt` with single-use session rotation in `user_sessions`, `RolesGuard` + `@Roles()` + `@CurrentUser()`, TOTP 2FA with backup codes and mandatory staff check, magic link login, email verification, password reset, account lockout after 5 failed attempts)
+  - `0.4 Users & staff` (AdminUsersController under `/api/v1/admin/users`, UsersController under `/api/v1/users`, staff invitation with `auth_tokens`, staff profile management, `staff_requires_2fa` check enforcement, soft-deletion, session revocation on deactivation/deletion)
 - Known issues:
-  - Users module (to be refactored in 0.4): accepts raw `UncheckedUpdateInput` and lacks ownership/role scoping.
   - Remote staging DB currently lacks FK constraints from `coders_hub_schema.sql` (test DB automation uses the SQL schema as truth).
 
 ## 3. Golden rules

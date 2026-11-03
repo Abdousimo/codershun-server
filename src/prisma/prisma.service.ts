@@ -8,8 +8,8 @@ import { Prisma, PrismaClient } from "../generated/prisma/client";
 export interface UserContext {
   id?: string;
   role?: string;
-  companyId?: string;
-  talentId?: string;
+  companyId?: string | null;
+  talentId?: string | null;
   ip?: string;
 }
 

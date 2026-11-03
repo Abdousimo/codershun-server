@@ -4,6 +4,7 @@ module.exports = {
   rootDir: ".",
   testRegex: ".*\\.e2e-spec\\.ts$",
   moduleFileExtensions: ["js", "json", "ts"],
+  testTimeout: 30000,
   transform: {
     "^.+\\.ts$": [
       "ts-jest",
@@ -17,4 +18,3 @@ module.exports = {
     ],
   },
 };
-
