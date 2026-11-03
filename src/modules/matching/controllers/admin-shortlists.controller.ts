@@ -93,3 +93,4 @@ export class AdminShortlistsController {
     return this.shortlistsService.publishShortlist(shortlistId, currentUser);
   }
 }
+

@@ -49,3 +49,4 @@ export class UpdateShortlistItemDto {
   @IsOptional()
   sortOrder?: number;
 }
+

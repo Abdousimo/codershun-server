@@ -7,3 +7,4 @@ export class CreateShortlistDto {
   @IsOptional()
   notes?: string;
 }
+

@@ -45,3 +45,4 @@ export class ClientShortlistsController {
     return this.shortlistsService.recordClientDecision(id, talentId, dto, currentUser);
   }
 }
+

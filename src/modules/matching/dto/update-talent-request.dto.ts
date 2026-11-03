@@ -40,3 +40,4 @@ export class UpdateTalentRequestStatusDto {
   @IsOptional()
   cancelledReason?: string;
 }
+

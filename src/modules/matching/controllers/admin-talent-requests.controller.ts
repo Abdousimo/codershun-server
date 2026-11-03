@@ -95,3 +95,4 @@ export class AdminTalentRequestsController {
     return this.matchingService.findMatchesForRequest(id);
   }
 }
+

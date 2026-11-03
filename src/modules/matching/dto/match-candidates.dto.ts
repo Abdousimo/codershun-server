@@ -61,3 +61,4 @@ export class MatchedCandidateDto {
   @ApiProperty({ description: "Whether this talent is already on a shortlist for this request" })
   isAlreadyShortlisted!: boolean;
 }
+

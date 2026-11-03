@@ -13,3 +13,4 @@ export class PublicShortlistsController {
     return this.shortlistsService.findPublicShortlistByToken(token);
   }
 }
+

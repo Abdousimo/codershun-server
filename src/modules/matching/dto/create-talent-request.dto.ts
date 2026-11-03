@@ -171,3 +171,4 @@ export class CreateTalentRequestDto {
   @IsOptional()
   languages?: TalentRequestLanguageInputDto[];
 }
+

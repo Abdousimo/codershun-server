@@ -185,3 +185,4 @@ export class ClientShortlistResponseDto {
   @ApiProperty({ type: [AnonymisedShortlistItemDto] })
   items!: AnonymisedShortlistItemDto[];
 }
+

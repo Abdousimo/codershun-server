@@ -563,3 +563,4 @@ export class TalentRequestsService {
     return this.findById(id, currentUser);
   }
 }
+

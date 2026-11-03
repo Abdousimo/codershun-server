@@ -18,6 +18,7 @@ import { CrmModule } from "./modules/crm/crm.module";
 import { PublicFormsModule } from "./modules/public-forms/public-forms.module";
 import { TalentsModule } from "./modules/talents/talents.module";
 import { MatchingModule } from "./modules/matching/matching.module";
+import { PlacementsModule } from "./modules/placements/placements.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { MatchingModule } from "./modules/matching/matching.module";
     PublicFormsModule,
     TalentsModule,
     MatchingModule,
+    PlacementsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessTokenGuard },

@@ -20,3 +20,4 @@ export class ShortlistClientDecisionDto {
   @IsOptional()
   comment?: string;
 }
+

@@ -60,3 +60,4 @@ export class QueryTalentRequestsDto {
   @IsOptional()
   sort?: string = "createdAt:desc";
 }
+

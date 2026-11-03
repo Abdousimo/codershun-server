@@ -151,3 +151,4 @@ export class TalentRequestResponseDto {
   @ApiProperty()
   updatedAt!: string;
 }
+
