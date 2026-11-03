@@ -3,26 +3,61 @@ import { createPrismaClient } from "../src/lib/prisma";
 const prisma = createPrismaClient();
 
 async function main() {
-  const users = await Promise.all([
-    prisma.user.upsert({
-      where: { email: "alice@prisma.io" },
-      update: { name: "Alice" },
+  const currencies = await Promise.all([
+    prisma.currencies.upsert({
+      where: { code: "EUR" },
+      update: { name: "Euro", symbol: "€", isClientCurrency: true },
       create: {
-        email: "alice@prisma.io",
-        name: "Alice",
+        code: "EUR",
+        name: "Euro",
+        symbol: "€",
+        isClientCurrency: true,
       },
     }),
-    prisma.user.upsert({
-      where: { email: "bob@prisma.io" },
-      update: { name: "Bob" },
+    prisma.currencies.upsert({
+      where: { code: "USD" },
+      update: { name: "US Dollar", symbol: "$", isClientCurrency: true },
       create: {
-        email: "bob@prisma.io",
-        name: "Bob",
+        code: "USD",
+        name: "US Dollar",
+        symbol: "$",
+        isClientCurrency: true,
+      },
+    }),
+    prisma.currencies.upsert({
+      where: { code: "GBP" },
+      update: { name: "Pound Sterling", symbol: "£", isClientCurrency: true },
+      create: {
+        code: "GBP",
+        name: "Pound Sterling",
+        symbol: "£",
+        isClientCurrency: true,
       },
     }),
   ]);
 
-  console.log(`Seeded ${users.length} users.`);
+  const users = await Promise.all([
+    prisma.users.upsert({
+      where: { email: "alice@prisma.io" },
+      update: { firstName: "Alice" },
+      create: {
+        email: "alice@prisma.io",
+        role: "talent",
+        firstName: "Alice",
+      },
+    }),
+    prisma.users.upsert({
+      where: { email: "bob@prisma.io" },
+      update: { firstName: "Bob" },
+      create: {
+        email: "bob@prisma.io",
+        role: "client_admin",
+        firstName: "Bob",
+      },
+    }),
+  ]);
+
+  console.log(`Seeded ${currencies.length} currencies and ${users.length} users.`);
 }
 
 main()
