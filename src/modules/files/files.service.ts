@@ -38,6 +38,7 @@ export class FilesService {
   ];
 
   constructor(
+    @Inject(PrismaService)
     private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE_TOKEN)
     private readonly storageService: IStorageService,

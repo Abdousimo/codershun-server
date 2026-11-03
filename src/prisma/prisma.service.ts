@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -17,8 +17,8 @@ export interface UserContext {
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
 
-  constructor(configService: ConfigService) {
-    const databaseUrl = configService.get<string>("database.url") ?? process.env.DATABASE_URL?.trim();
+  constructor(@Inject(ConfigService) configService?: ConfigService) {
+    const databaseUrl = configService?.get<string>("database.url") ?? process.env.DATABASE_URL?.trim();
     if (!databaseUrl) {
       throw new Error("DATABASE_URL is required");
     }
