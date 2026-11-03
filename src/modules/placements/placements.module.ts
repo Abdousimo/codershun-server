@@ -26,3 +26,4 @@ import { TalentPlacementsController } from "./controllers/talent-placements.cont
   ],
 })
 export class PlacementsModule {}
+

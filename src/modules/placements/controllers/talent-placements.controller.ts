@@ -42,3 +42,4 @@ export class TalentPlacementsController {
     return this.placementsService.findById(id, currentUser);
   }
 }
+
