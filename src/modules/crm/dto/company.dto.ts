@@ -222,3 +222,4 @@ export class UpdateCompanyDto {
   @IsUUID("all", { each: true })
   tagIds?: string[];
 }
+

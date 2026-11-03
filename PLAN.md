@@ -33,14 +33,14 @@ Legend: **CDC** = sections to read · **Tables** = main tables · **Rules** = se
   Permissions: Super admin edits all; Finance edits pricing settings only.
 - [x] **1.2 Files** — private storage on VPS (`uploads/`), signed URLs, size/MIME checks
   (CV PDF ≤ 5 MB), `files` table, virus-scan status field. NFR-03.
-- [ ] **1.3 Companies, contacts & leads (CRM)** — CDC 6.2, 7.4, 11.2 "Leads & companies".
+- [x] **1.3 Companies, contacts & leads (CRM)** — CDC 6.2, 7.4, 11.2 "Leads & companies".
   Tables: `companies`, `contacts`, `leads`, `notes`, `tasks`, `activities`, `company_tags`.
   Pipeline stages, kanban/list queries, lost reason required (FR-REQ-02), UTM/source, owner.
-- [ ] **1.4 Public forms** — CDC 8.1, 8.5, 8.8, 8.11, 7.1 steps 1–2.
+- [x] **1.4 Public forms** — CDC 8.1, 8.5, 8.8, 8.11, 7.1 steps 1–2.
   `POST /public/hire-requests` (creates company + contact + lead + talent request, indicative
   price range), `POST /public/talent-applications` (user + talent in `applied` + CV),
   `POST /public/contact`, `POST /public/referrers`. CAPTCHA, rate limit, `form_submissions`, consents.
-- [ ] **1.5 Talents & vetting (ATS)** — CDC 6.1, 7.2, 9.2 "My profile / Vetting", 11.2 "Talents".
+- [x] **1.5 Talents & vetting (ATS)** — CDC 6.1, 7.2, 9.2 "My profile / Vetting", 11.2 "Talents".
   Tables: `talents` + skills/languages/experiences/educations/certifications/portfolio/references/
   documents/tags, `vetting_steps`, `scorecards`, `scorecard_scores`.
   Stage moves, scorecards, approval (seniority, agreed pay, showcase), duplicate detection,

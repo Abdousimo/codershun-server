@@ -14,6 +14,9 @@ import { HealthModule } from "./modules/health/health.module";
 import { UsersModule } from "./modules/users/users.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { FilesModule } from "./modules/files/files.module";
+import { CrmModule } from "./modules/crm/crm.module";
+import { PublicFormsModule } from "./modules/public-forms/public-forms.module";
+import { TalentsModule } from "./modules/talents/talents.module";
 
 @Module({
   imports: [
@@ -29,6 +32,9 @@ import { FilesModule } from "./modules/files/files.module";
     UsersModule,
     SettingsModule,
     FilesModule,
+    CrmModule,
+    PublicFormsModule,
+    TalentsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessTokenGuard },

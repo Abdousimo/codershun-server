@@ -102,3 +102,4 @@ export class UpdateContactDto {
   @IsUrl()
   linkedinUrl?: string;
 }
+
