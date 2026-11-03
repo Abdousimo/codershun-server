@@ -24,20 +24,14 @@ tokens; never commit it to source control.
 
 The server listens on port `3001` by default. Set `PORT` to override it.
 
-- `GET /v1/` - API metadata
-- `GET /v1/health` - health check
-- `POST /v1/auth/register` - create a talent account
-- `POST /v1/auth/login` - issue access and refresh tokens
-- `POST /v1/auth/refresh` - issue a new access token
-- `POST /v1/auth/logout` - revoke a refresh session
-- `GET /v1/auth/me` - return the authenticated principal
-- `GET|PATCH|DELETE /v1/users` - users (authentication required)
-- `GET|PATCH|DELETE /v1/users/:id` - one user
-- `GET /v1/api/resources/:resource` - list any schema resource
-- `GET /v1/api/resources/:resource/:id` - fetch one record
-- `POST /v1/api/resources/:resource` - create a record
-- `PATCH /v1/api/resources/:resource/:id` - update a record
-- `DELETE /v1/api/resources/:resource/:id` - delete a record
+- `GET /api/v1/` - API metadata
+- `GET /api/v1/health` - health check
+- `GET /api/docs` - interactive Swagger UI (development only)
+- `GET /api/docs-json` - raw OpenAPI JSON document (development only)
+
+Swagger lists the complete endpoint catalog, request DTOs, response schemas, enums,
+authentication requirements, role-protected routes and pagination query parameters.
+Use **Authorize** in the Swagger UI with a JWT access token from `/api/v1/auth/login`.
 
 Resource names use kebab-case table names, for example `talent-requests`,
 `shortlist-items`, `placements`, and `invoice-lines`. List endpoints support

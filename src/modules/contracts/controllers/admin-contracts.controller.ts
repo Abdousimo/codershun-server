@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
 import { AccessTokenGuard } from "../../../common/guards/access-token.guard";
 import { RolesGuard } from "../../../common/guards/roles.guard";
@@ -50,6 +50,7 @@ export class AdminContractsController {
   @Post(":id/file")
   @UseInterceptors(FileInterceptor("file"))
   @ApiConsumes("multipart/form-data")
+  @ApiBody({ schema: { type: "object", properties: { file: { type: "string", format: "binary" } }, required: ["file"] } })
   @ApiOperation({ summary: "Upload contract PDF" })
   attachFile(@Param("id", ParseUUIDPipe) id: string, @UploadedFile() file: UploadedMulterFile, @CurrentUser() user: AuthenticatedUser) {
     return this.contractsService.attachFile(id, file, false, user);
@@ -58,17 +59,20 @@ export class AdminContractsController {
   @Post(":id/signed-file")
   @UseInterceptors(FileInterceptor("file"))
   @ApiConsumes("multipart/form-data")
+  @ApiBody({ schema: { type: "object", properties: { file: { type: "string", format: "binary" } }, required: ["file"] } })
   @ApiOperation({ summary: "Upload signed contract PDF" })
   attachSignedFile(@Param("id", ParseUUIDPipe) id: string, @UploadedFile() file: UploadedMulterFile, @CurrentUser() user: AuthenticatedUser) {
     return this.contractsService.attachFile(id, file, true, user);
   }
 
   @Post(":id/signatories")
+  @ApiOperation({ summary: "Add a contract signatory" })
   addSignatory(@Param("id", ParseUUIDPipe) id: string, @Body() dto: CreateSignatoryDto, @CurrentUser() user: AuthenticatedUser) {
     return this.contractsService.addSignatory(id, dto, user);
   }
 
   @Patch(":id/signature-status")
+  @ApiOperation({ summary: "Update contract signature status" })
   updateStatus(@Param("id", ParseUUIDPipe) id: string, @Body() dto: UpdateSignatureStatusDto, @CurrentUser() user: AuthenticatedUser) {
     return this.contractsService.updateSignatureStatus(id, dto, user);
   }

@@ -23,31 +23,37 @@ export class AdminPayoutsController {
   constructor(private readonly payoutsService: PayoutsService) {}
 
   @Get()
+  @ApiOperation({ summary: "List talent payouts" })
   findAll(@Query() query: QueryPayoutsDto, @CurrentUser() user: AuthenticatedUser) {
     return this.payoutsService.findAll(query, user);
   }
 
   @Get(":id")
+  @ApiOperation({ summary: "Get payout details" })
   findOne(@Param("id", ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.payoutsService.findById(id, user);
   }
 
   @Post()
+  @ApiOperation({ summary: "Create a manual payout for the previous month" })
   create(@Body() dto: CreatePayoutDto, @CurrentUser() user: AuthenticatedUser) {
     return this.payoutsService.create(dto, user);
   }
 
   @Post(":id/lines")
+  @ApiOperation({ summary: "Add a payout line" })
   addLine(@Param("id", ParseUUIDPipe) id: string, @Body() dto: CreatePayoutLineDto, @CurrentUser() user: AuthenticatedUser) {
     return this.payoutsService.addLine(id, dto, user);
   }
 
   @Post(":id/approve")
+  @ApiOperation({ summary: "Approve a pending payout" })
   approve(@Param("id", ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.payoutsService.approve(id, user);
   }
 
   @Post(":id/paid")
+  @ApiOperation({ summary: "Mark an approved payout as paid" })
   markPaid(@Param("id", ParseUUIDPipe) id: string, @Body() dto: MarkPaidDto, @CurrentUser() user: AuthenticatedUser) {
     return this.payoutsService.markPaid(id, dto, user);
   }

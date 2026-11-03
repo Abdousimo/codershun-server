@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
 import { AccessTokenGuard } from "../../../common/guards/access-token.guard";
 import { RolesGuard } from "../../../common/guards/roles.guard";
@@ -18,18 +18,21 @@ export class AdminNotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get("templates")
+  @ApiOperation({ summary: "List localized email templates" })
   @Roles(UserRole.super_admin, UserRole.finance)
   listTemplates(@CurrentUser() user: AuthenticatedUser) {
     return this.notificationsService.listTemplates(user);
   }
 
   @Post("templates")
+  @ApiOperation({ summary: "Create or update an email template" })
   @Roles(UserRole.super_admin, UserRole.finance)
   upsertTemplate(@Body() dto: UpsertEmailTemplateDto, @CurrentUser() user: AuthenticatedUser) {
     return this.notificationsService.upsertTemplate(dto, user);
   }
 
   @Post()
+  @ApiOperation({ summary: "Create an in-app, email or Slack notification" })
   @Roles(UserRole.super_admin, UserRole.finance)
   create(@Body() dto: CreateNotificationDto, @CurrentUser() user: AuthenticatedUser) {
     return this.notificationsService.create(dto, user);

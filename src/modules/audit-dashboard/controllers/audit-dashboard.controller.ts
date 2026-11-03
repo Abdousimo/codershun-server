@@ -1,5 +1,5 @@
 import { Controller, Get, Query, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AccessTokenGuard } from "../../../common/guards/access-token.guard";
 import { RolesGuard } from "../../../common/guards/roles.guard";
 import { Roles } from "../../../common/decorators/roles.decorator";
@@ -26,16 +26,22 @@ export class AuditDashboardController {
   constructor(private readonly service: AuditDashboardService) {}
 
   @Get("audit-log")
+  @ApiOperation({ summary: "List audit log entries", description: "Read-only audit trail for money, status and configuration changes." })
+  @ApiResponse({ status: 200, description: "Paginated audit entries" })
   listAudit(@Query() query: QueryAuditDto, @CurrentUser() user: AuthenticatedUser) {
     return this.service.listAudit(query, user);
   }
 
   @Get("status-history")
+  @ApiOperation({ summary: "List entity status history" })
+  @ApiResponse({ status: 200, description: "Paginated status transitions" })
   listStatusHistory(@Query() query: QueryStatusHistoryDto, @CurrentUser() user: AuthenticatedUser) {
     return this.service.listStatusHistory(query, user);
   }
 
   @Get("dashboard")
+  @ApiOperation({ summary: "Get dashboard KPIs", description: "Returns MRR, margins, invoice aging, placement economics and payouts due." })
+  @ApiResponse({ status: 200, description: "Dashboard KPI snapshot" })
   getDashboard(@CurrentUser() user: AuthenticatedUser) {
     return this.service.getDashboard(user);
   }
