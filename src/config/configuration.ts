@@ -6,6 +6,8 @@ export default () => ({
     testUrl: process.env.DATABASE_URL_TEST,
   },
   auth: {
-    secret: process.env.AUTH_SECRET,
+    secret: process.env.AUTH_SECRET || "codershub-dev-secret-key-must-be-at-least-32-characters-long",
+    accessTtl: process.env.JWT_ACCESS_TTL || "15m",
+    refreshTtlDays: parseInt(process.env.JWT_REFRESH_TTL_DAYS || "30", 10),
   },
 });

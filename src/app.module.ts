@@ -4,6 +4,7 @@ import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 
 import { PrismaModule } from "./prisma/prisma.module";
 import { AccessTokenGuard } from "./common/guards/access-token.guard";
+import { RolesGuard } from "./common/guards/roles.guard";
 import { PrismaExceptionFilter } from "./common/filters/prisma-exception.filter";
 import configuration from "./config/configuration";
 import { validateEnv } from "./config/env.validation";
@@ -27,6 +28,7 @@ import { UsersModule } from "./modules/users/users.module";
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessTokenGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },
   ],
 })

@@ -18,7 +18,7 @@ export class EnvironmentVariables {
   PORT: number = 3001;
 
   @IsString()
-  DATABASE_URL: string;
+  DATABASE_URL!: string;
 
   @IsString()
   @IsOptional()
@@ -26,7 +26,16 @@ export class EnvironmentVariables {
 
   @IsString()
   @MinLength(32)
-  AUTH_SECRET: string;
+  @IsOptional()
+  AUTH_SECRET: string = "codershub-dev-secret-key-must-be-at-least-32-characters-long";
+
+  @IsString()
+  @IsOptional()
+  JWT_ACCESS_TTL: string = "15m";
+
+  @IsString()
+  @IsOptional()
+  JWT_REFRESH_TTL_DAYS: string = "30";
 }
 
 export function validateEnv(config: Record<string, unknown>) {

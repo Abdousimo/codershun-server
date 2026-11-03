@@ -1,16 +1,19 @@
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { ServiceUnavailableException } from "@nestjs/common";
 import { HealthController } from "./health.controller";
 import { PrismaService } from "../../prisma/prisma.service";
 
 describe("HealthController", () => {
   let controller: HealthController;
-  let prisma: Partial<PrismaService>;
+  let mockQueryRaw: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
-    prisma = {
-      $queryRaw: jest.fn().mockResolvedValue([{ 1: 1 }]),
-    };
-    controller = new HealthController(prisma as PrismaService);
+    mockQueryRaw = jest.fn();
+    mockQueryRaw.mockResolvedValue([{ 1: 1 }] as never);
+    const prisma = {
+      $queryRaw: mockQueryRaw,
+    } as unknown as PrismaService;
+    controller = new HealthController(prisma);
   });
 
   it("should return ok and connected when db query succeeds", async () => {
@@ -21,7 +24,7 @@ describe("HealthController", () => {
   });
 
   it("should throw ServiceUnavailableException when db query fails", async () => {
-    (prisma.$queryRaw as jest.Mock).mockRejectedValueOnce(new Error("Connection refused"));
+    mockQueryRaw.mockRejectedValueOnce(new Error("Connection refused") as never);
     await expect(controller.check()).rejects.toThrow(ServiceUnavailableException);
   });
 });

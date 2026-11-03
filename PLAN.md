@@ -9,12 +9,12 @@ Legend: **CDC** = sections to read · **Tables** = main tables · **Rules** = se
 
 ## Phase 0 — Foundations
 
-- [ ] **0.1 Repo audit** — read the repo, fill `AGENTS.md` §2, list gaps. No code changes.
-- [ ] **0.2 Prisma alignment** — `prisma db pull` from the SQL schema, check enums / computed
+- [x] **0.1 Repo audit** — read the repo, fill `AGENTS.md` §2, list gaps. No code changes.
+- [x] **0.2 Prisma alignment** — `prisma db pull` from the SQL schema, check enums / computed
   columns / unsupported types, `PrismaService`, `withUserContext()` helper, global exception
   filter mapping DB errors, `ValidationPipe`, Swagger, config module, health endpoint.
   Test DB script that loads the SQL file into `DATABASE_URL_TEST`.
-- [ ] **0.3 Auth review & fix** — CDC 3.2, 8.12, NFR-03. Tables: `users`, `auth_tokens`,
+- [x] **0.3 Auth review & fix** — CDC 3.2, 8.12, NFR-03. Tables: `users`, `auth_tokens`,
   `user_sessions`, `oauth_accounts`, `staff_profiles`.
   Email + password (Argon2), magic link, email verification, password reset, JWT access +
   refresh (rotated, stored hashed in `user_sessions`), TOTP 2FA (mandatory for staff),

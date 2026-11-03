@@ -1,9 +1,8 @@
-export type AuthenticatedUser = {
-  id: string;
-  email: string;
-  role: string;
-};
+import type { Request } from "express";
+import type { AuthenticatedUser } from "./authenticated-user";
 
-export type AuthenticatedRequest = {
+export type { AuthenticatedUser };
+
+export interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
-};
+}

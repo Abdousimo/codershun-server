@@ -1,5 +1,6 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus, Logger } from "@nestjs/common";
-import { Response } from "express";
+import { Catch, HttpStatus, Logger } from "@nestjs/common";
+import type { ArgumentsHost, ExceptionFilter } from "@nestjs/common";
+import type { Response } from "express";
 import { Prisma } from "../../generated/prisma/client";
 
 @Catch()
@@ -86,7 +87,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
       }
     }
 
-    // Let other exceptions bubble or return 500
+    // Let standard HttpExceptions bubble with their original status and response
     if (typeof exception === "object" && exception !== null && "status" in exception) {
       const httpException = exception as { getStatus?: () => number; getResponse?: () => unknown; status: number };
       const status = typeof httpException.getStatus === "function" ? httpException.getStatus() : httpException.status;
