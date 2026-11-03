@@ -6,7 +6,7 @@ import {
 import { createHash, createHmac, randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 
-import { PrismaService } from "../../infrastructure/database/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { RegisterDto } from "./dto/register.dto";

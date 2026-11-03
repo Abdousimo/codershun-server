@@ -1,23 +1,52 @@
 import "reflect-metadata";
 import "dotenv/config";
 
-import { RequestMethod } from "@nestjs/common";
+import { Logger, RequestMethod, ValidationPipe } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
+  const logger = new Logger("Bootstrap");
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
-  app.setGlobalPrefix("v1", {
+
+  const configService = app.get(ConfigService);
+
+  // Global prefix /api/v1
+  app.setGlobalPrefix("api/v1", {
     exclude: [{ path: "", method: RequestMethod.GET }],
   });
-  const rawPort = (process.env.PORT ?? "").trim();
-  const parsedPort = rawPort.length > 0 ? Number(rawPort) : Number.NaN;
-  const port =
-    Number.isFinite(parsedPort) && parsedPort >= 0 && parsedPort <= 65535 ? parsedPort : 3001;
+
+  // Global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Swagger OpenAPI docs at /api/docs
+  const nodeEnv = configService.get<string>("env", "development");
+  if (nodeEnv !== "production") {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle("Coders Hub API")
+      .setDescription("Coders Hub - IT Staff Augmentation Platform API")
+      .setVersion("1.0")
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup("api/docs", app, document);
+    logger.log("Swagger documentation initialized at /api/docs");
+  }
+
+  const port = configService.get<number>("port", 3001);
   await app.listen(port, "0.0.0.0");
-  console.log(`Server running at http://localhost:${port}`);
+  logger.log(`Server running at http://localhost:${port}/api/v1`);
 }
 
 bootstrap().catch((error) => {

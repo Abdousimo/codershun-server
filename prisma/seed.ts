@@ -1,6 +1,14 @@
-import { createPrismaClient } from "../src/lib/prisma";
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../src/generated/prisma/client";
 
-const prisma = createPrismaClient();
+const databaseUrl = process.env.DATABASE_URL?.trim();
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is required to seed the database");
+}
+
+const adapter = new PrismaPg({ connectionString: databaseUrl });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const currencies = await Promise.all([

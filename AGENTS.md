@@ -12,11 +12,17 @@ statuses in section 6, permissions in sections 3.2 and 11.3, acceptance criteria
 
 ## 2. Current state (keep this section up to date)
 
-<!-- The agent fills this in during the first session, then updates it after each module. -->
-- SQL schema file: `<path>`
+- SQL schema file: `coders_hub_schema.sql` (root)
 - Prisma schema: `prisma/schema.prisma`
-- Done modules: _none yet_
-- Known issues: _none yet_
+- Done modules: _none yet_ (scaffolding in place, but broken build and out of spec)
+- Known issues:
+  - Build broken: `pnpm run build` fails because `src/generated/prisma` is out of sync with `prisma/schema.prisma`.
+  - Unsafe generic CRUD backdoor: `src/modules/resources` exposes all 90 tables without validation or RBAC.
+  - Auth non-compliant: custom crypto HMAC JWT & scrypt instead of `@nestjs/jwt` + `argon2`; no 2FA, no magic link, no token rotation, no rate limiting.
+  - Prisma schema missing foreign key `@relation` definitions (all scalar UUIDs) and SQL views.
+  - `prisma/seed.ts` broken due to missing import (`../src/lib/prisma`).
+  - No tests, no test runner (Jest), no linter (ESLint), and no test database automation.
+  - Global prefix is `/v1` instead of `/api/v1`, no `ValidationPipe`, no Swagger, no `@nestjs/config`.
 
 ## 3. Golden rules
 

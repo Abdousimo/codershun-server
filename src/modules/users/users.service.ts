@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 
 import { Prisma, UserRole } from "../../generated/prisma/client";
-import { PrismaService } from "../../infrastructure/database/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
 
 @Injectable()
 export class UsersService {
