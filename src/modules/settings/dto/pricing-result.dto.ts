@@ -71,3 +71,4 @@ export class BuyoutResultDto {
   @ApiProperty({ description: "Final buyout fee amount" })
   fee!: string;
 }
+

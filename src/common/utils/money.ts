@@ -17,3 +17,4 @@ export function round2(val: Prisma.Decimal | string | number): Prisma.Decimal {
   const d = toDecimal(val);
   return d.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 }
+

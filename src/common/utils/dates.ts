@@ -12,3 +12,4 @@ export function differenceInFullMonths(laterDate: Date, earlierDate: Date): numb
   }
   return Math.max(0, months);
 }
+

@@ -12,6 +12,8 @@ import { AppFeatureModule } from "./modules/app/app.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { HealthModule } from "./modules/health/health.module";
 import { UsersModule } from "./modules/users/users.module";
+import { SettingsModule } from "./modules/settings/settings.module";
+import { FilesModule } from "./modules/files/files.module";
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { UsersModule } from "./modules/users/users.module";
     AppFeatureModule,
     AuthModule,
     UsersModule,
+    SettingsModule,
+    FilesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessTokenGuard },

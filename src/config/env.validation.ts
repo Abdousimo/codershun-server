@@ -36,6 +36,10 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   JWT_REFRESH_TTL_DAYS: string = "30";
+
+  @IsString()
+  @IsOptional()
+  STORAGE_UPLOAD_DIR?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

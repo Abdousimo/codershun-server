@@ -83,3 +83,4 @@ export class CalculateBuyoutDto {
   @Min(0)
   monthsElapsed!: number;
 }
+

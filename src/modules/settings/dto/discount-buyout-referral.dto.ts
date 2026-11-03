@@ -211,3 +211,4 @@ export class UpdateReferralRewardRuleDto {
   @IsBoolean()
   isActive?: boolean;
 }
+

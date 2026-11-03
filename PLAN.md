@@ -24,14 +24,14 @@ Legend: **CDC** = sections to read · **Tables** = main tables · **Rules** = se
 
 ## Phase 1 — MVP back-office
 
-- [ ] **1.1 Settings & reference data** — CDC 5.2–5.6, 5.8, 11.2 "Settings".
+- [x] **1.1 Settings & reference data** — CDC 5.2–5.6, 5.8, 11.2 "Settings".
   Tables: `settings`, `currencies`, `fx_rates`, `legal_entities`, `rate_card_versions`,
   `rate_card_entries`, `discount_rules`, `buyout_tiers`, `referral_reward_rules`,
   `work_calendars`, `public_holidays`, `job_categories`, `job_roles`, `skills`, `languages`, `tags`.
   Includes a `PricingService` (client price from talent pay and margin, T&M hourly/daily,
   part-time, discounts, buy-out fee) used later by placements. Rules: FR-PRICE-01, FR-PRICE-03, FR-PRICE-04.
   Permissions: Super admin edits all; Finance edits pricing settings only.
-- [ ] **1.2 Files** — private S3-compatible storage, signed URLs, size/MIME checks
+- [x] **1.2 Files** — private storage on VPS (`uploads/`), signed URLs, size/MIME checks
   (CV PDF ≤ 5 MB), `files` table, virus-scan status field. NFR-03.
 - [ ] **1.3 Companies, contacts & leads (CRM)** — CDC 6.2, 7.4, 11.2 "Leads & companies".
   Tables: `companies`, `contacts`, `leads`, `notes`, `tasks`, `activities`, `company_tags`.

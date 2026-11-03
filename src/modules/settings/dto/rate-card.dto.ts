@@ -199,3 +199,4 @@ export class UpdateRateCardEntryDto {
   @IsString()
   currency?: string;
 }
+
