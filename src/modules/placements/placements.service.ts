@@ -16,6 +16,7 @@ import {
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
 import { PricingService } from "../settings/pricing.service";
+import { SettingsService } from "../settings/settings.service";
 import { round2, toDecimal } from "../../common/utils/money";
 import { CreatePlacementDto } from "./dto/create-placement.dto";
 import { UpdatePlacementDto } from "./dto/update-placement.dto";
@@ -35,6 +36,7 @@ export class PlacementsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pricingService: PricingService,
+    private readonly settingsService: SettingsService,
     private readonly onboardingService: PlacementOnboardingService,
   ) {}
 
@@ -167,7 +169,17 @@ export class PlacementsService {
 
     // 6. Dates calculation (FR-PLC-01: 10 working days ~ 14 calendar days trial)
     const startDate = dto.startDate ? new Date(dto.startDate) : new Date();
-    const trialEndDate = this.addWorkingDays(startDate, 10);
+    let trialWorkingDays = 10;
+    try {
+      const setting = await this.settingsService.getSettingByKey("trial.working_days");
+      const val = Number((setting?.value as any)?.value ?? setting?.value);
+      if (!isNaN(val) && val > 0) {
+        trialWorkingDays = val;
+      }
+    } catch {
+      // Fallback to default 10 working days
+    }
+    const trialEndDate = this.addWorkingDays(startDate, trialWorkingDays);
 
     const reference = this.generateReference();
 
@@ -216,7 +228,7 @@ export class PlacementsService {
     // Seed onboarding checklist items
     await this.onboardingService.seedOnboardingChecklist(created.id, currentUser);
 
-    return this.findAdminPlacementById(created.id);
+    return this.findAdminPlacementById(created.id, currentUser);
   }
 
   /**
@@ -232,6 +244,11 @@ export class PlacementsService {
     });
     if (!existing) {
       throw new NotFoundException(`Placement ${id} not found`);
+    }
+
+    // CDC 11.3: Sales role cannot edit talent pay
+    if (currentUser.role === UserRole.sales && dto.talentPay !== undefined) {
+      throw new ForbiddenException("Sales role cannot edit talent pay (CDC 11.3)");
     }
 
     // FR-PRICE-03: Prices frozen once placement leaves draft
@@ -459,26 +476,30 @@ export class PlacementsService {
       return this.mapToClientPlacement(placement);
     }
 
-    return this.mapToAdminPlacement(placement);
+    return this.mapToAdminPlacement(placement, currentUser);
   }
 
   /**
    * Direct admin query helper.
    */
-  async findAdminPlacementById(id: string): Promise<AdminPlacementResponseDto> {
+  async findAdminPlacementById(id: string, currentUser?: AuthenticatedUser): Promise<AdminPlacementResponseDto> {
     const placement = await this.prisma.placements.findUnique({
       where: { id },
     });
     if (!placement) {
       throw new NotFoundException(`Placement ${id} not found`);
     }
-    return this.mapToAdminPlacement(placement);
+
+    return this.mapToAdminPlacement(placement, currentUser);
   }
 
   /**
    * Internal mapper for Admin Response.
    */
-  private async mapToAdminPlacement(placement: any): Promise<AdminPlacementResponseDto> {
+  private async mapToAdminPlacement(
+    placement: any,
+    currentUser?: AuthenticatedUser,
+  ): Promise<AdminPlacementResponseDto> {
     const [company, talent, onboardingItems] = await Promise.all([
       this.prisma.companies.findUnique({ where: { id: placement.companyId }, select: { name: true } }),
       this.prisma.talents.findUnique({
@@ -500,6 +521,11 @@ export class PlacementsService {
       : marginAmount.dividedBy(clientPriceNet).times(hundred);
 
     const marginWarning = marginPct.lessThan(new Prisma.Decimal(30));
+
+    // FR-SEC-02: Recruiters never see client prices or margins (CDC 11.3)
+    const isRecruiter =
+      currentUser?.role === UserRole.recruiter ||
+      currentUser?.role === UserRole.recruiter_lead;
 
     return {
       id: placement.id,
@@ -527,13 +553,13 @@ export class PlacementsService {
       endReason: placement.endReason,
       currency: placement.currency,
       talentPay: talentPay.toFixed(2),
-      clientPrice: clientPrice.toFixed(2),
-      discountPct: discountPct.toFixed(2),
-      clientPriceNet: clientPriceNet.toFixed(2),
-      marginAmount: marginAmount.toFixed(2),
-      marginPct: marginPct.toFixed(2),
-      floorMarginPct: toDecimal(placement.floorMarginPct).toFixed(2),
-      marginWarning,
+      clientPrice: isRecruiter ? undefined : clientPrice.toFixed(2),
+      discountPct: isRecruiter ? undefined : discountPct.toFixed(2),
+      clientPriceNet: isRecruiter ? undefined : clientPriceNet.toFixed(2),
+      marginAmount: isRecruiter ? undefined : marginAmount.toFixed(2),
+      marginPct: isRecruiter ? undefined : marginPct.toFixed(2),
+      floorMarginPct: isRecruiter ? undefined : toDecimal(placement.floorMarginPct).toFixed(2),
+      marginWarning: isRecruiter ? undefined : marginWarning,
       marginOverrideApprovedBy: placement.marginOverrideApprovedBy,
       marginOverrideReason: placement.marginOverrideReason,
       isAtRisk: placement.isAtRisk,

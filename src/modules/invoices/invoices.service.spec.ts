@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, UnprocessableEntityException } from "@nestjs/common";
 import { InvoiceKind, InvoiceStatus, PaymentMethod, Prisma, UserRole } from "../../generated/prisma/client";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
 import { InvoicesService } from "./invoices.service";
@@ -118,7 +118,7 @@ describe("InvoicesService", () => {
 
     await expect(
       service.update("invoice-1", { notes: "changed" }, finance),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(UnprocessableEntityException);
   });
 
   it("FR-BILL-02: assigns a sequential legal-entity invoice number", async () => {
@@ -158,7 +158,7 @@ describe("InvoicesService", () => {
         },
         finance,
       ),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(UnprocessableEntityException);
   });
 
   it("denies invoice modification to Sales", async () => {

@@ -7,8 +7,10 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from "@nestjs/common";
+import type { Response } from "express";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
 import { AccessTokenGuard } from "../../../common/guards/access-token.guard";
@@ -91,6 +93,22 @@ export class AdminShortlistsController {
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return this.shortlistsService.publishShortlist(shortlistId, currentUser);
+  }
+
+  @Get("shortlists/:shortlistId/pdf")
+  @ApiOperation({ summary: "Export anonymised shortlist as PDF (FR-SEC-01)" })
+  async exportPdf(
+    @Param("shortlistId", ParseUUIDPipe) shortlistId: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const pdfBuffer = await this.shortlistsService.generateAnonymisedPdf(shortlistId, currentUser);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="shortlist-${shortlistId}-anonymised.pdf"`,
+      "Content-Length": pdfBuffer.length.toString(),
+    });
+    res.end(pdfBuffer);
   }
 }
 

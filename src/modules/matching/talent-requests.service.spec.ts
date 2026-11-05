@@ -21,6 +21,9 @@ describe("TalentRequestsService", () => {
       companies: {
         findUnique: jest.fn(),
       },
+      invoices: {
+        findFirst: jest.fn<any>().mockResolvedValue(null),
+      },
       talentRequests: {
         create: jest.fn(),
         findUnique: jest.fn(),
@@ -224,6 +227,24 @@ describe("TalentRequestsService", () => {
           }),
         }),
       );
+    });
+
+    it("FR-BILL-03: blocks new talent requests if company has unpaid invoices overdue by > 30 days", async () => {
+      mockPrisma.companies.findUnique.mockResolvedValue({ id: "comp-1", name: "Late Payer Ltd" });
+      mockPrisma.invoices.findFirst.mockResolvedValue({
+        id: "inv-overdue-1",
+        number: "INV-2026-0001",
+      });
+
+      await expect(
+        service.createRequest(
+          {
+            companyId: "comp-1",
+            roleTitle: "Backend Developer",
+          },
+          adminUser,
+        ),
+      ).rejects.toThrow(UnprocessableEntityException);
     });
   });
 });

@@ -105,11 +105,11 @@ export class AdminPlacementResponseDto {
   @ApiProperty({ description: "Talent net pay per month" })
   talentPay!: string;
 
-  @ApiProperty({ description: "Client price per month" })
-  clientPrice!: string;
+  @ApiPropertyOptional({ description: "Client price per month (hidden from recruiters)" })
+  clientPrice?: string;
 
-  @ApiProperty({ description: "Discount percentage" })
-  discountPct!: string;
+  @ApiPropertyOptional({ description: "Discount percentage (hidden from recruiters)" })
+  discountPct?: string;
 
   @ApiPropertyOptional({ description: "Net client price after discount" })
   clientPriceNet?: string | null;
@@ -120,11 +120,11 @@ export class AdminPlacementResponseDto {
   @ApiPropertyOptional({ description: "Gross margin percentage" })
   marginPct?: string | null;
 
-  @ApiProperty({ description: "Floor margin percentage (default 25%)" })
-  floorMarginPct!: string;
+  @ApiPropertyOptional({ description: "Floor margin percentage (default 25%)" })
+  floorMarginPct?: string;
 
-  @ApiProperty({ description: "Whether margin falls under warning threshold (< 30%)" })
-  marginWarning!: boolean;
+  @ApiPropertyOptional({ description: "Whether margin falls under warning threshold (< 30%)" })
+  marginWarning?: boolean;
 
   @ApiPropertyOptional()
   marginOverrideApprovedBy?: string | null;

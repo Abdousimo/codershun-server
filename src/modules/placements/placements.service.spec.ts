@@ -81,7 +81,16 @@ describe("PlacementsService", () => {
       getOnboardingItems: jest.fn().mockResolvedValue([]),
     };
 
-    service = new PlacementsService(mockPrisma, mockPricingService, mockOnboardingService);
+    const mockSettingsService = {
+      getSettingByKey: (jest.fn() as any).mockResolvedValue({ value: 10 }),
+    };
+
+    service = new PlacementsService(
+      mockPrisma,
+      mockPricingService,
+      mockSettingsService as any,
+      mockOnboardingService,
+    );
   });
 
   describe("FR-TAL-02: Talent Allocation Capacity", () => {
@@ -501,6 +510,51 @@ describe("PlacementsService", () => {
       expect(result.discountPct).toBeUndefined();
       expect(result.marginAmount).toBeUndefined();
       expect(result.marginPct).toBeUndefined();
+    });
+
+    it("FR-SEC-02: recruiter view hides client price, discounts, and margins (CDC 11.3)", async () => {
+      mockPrisma.placements.findUnique.mockResolvedValue({
+        id: "plc-2",
+        reference: "PLC-2026-1006",
+        companyId: "client-company-1",
+        talentId: "talent-target-1",
+        status: PlacementStatus.active,
+        currency: "EUR",
+        clientPrice: new Prisma.Decimal("2000.00"),
+        talentPay: new Prisma.Decimal("1200.00"),
+        discountPct: new Prisma.Decimal("5.00"),
+        floorMarginPct: new Prisma.Decimal("25.00"),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await service.findById("plc-2", recruiterUser);
+
+      expect(result.talentPay).toBe("1200.00");
+      expect(result.clientPrice).toBeUndefined();
+      expect(result.clientPriceNet).toBeUndefined();
+      expect(result.discountPct).toBeUndefined();
+      expect(result.marginAmount).toBeUndefined();
+      expect(result.marginPct).toBeUndefined();
+    });
+
+    it("CDC 11.3: sales role cannot edit talent pay", async () => {
+      mockPrisma.placements.findUnique.mockResolvedValue({
+        id: "plc-3",
+        status: PlacementStatus.draft,
+        talentId: "talent-1",
+        timeSharePct: 100,
+      });
+
+      const salesUser: AuthenticatedUser = {
+        id: "sales-1",
+        email: "sales@codershub.dz",
+        role: UserRole.sales,
+      };
+
+      await expect(
+        service.updatePlacement("plc-3", { talentPay: 1500 }, salesUser),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });

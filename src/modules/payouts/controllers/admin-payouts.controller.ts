@@ -17,7 +17,7 @@ import { QueryPayoutsDto } from "../dto/query-payouts.dto";
 @ApiTags("Admin / Payouts")
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(UserRole.super_admin, UserRole.finance, UserRole.sales, UserRole.account_manager, UserRole.recruiter_lead, UserRole.recruiter, UserRole.talent)
+@Roles(UserRole.super_admin, UserRole.finance)
 @Controller("admin/payouts")
 export class AdminPayoutsController {
   constructor(private readonly payoutsService: PayoutsService) {}

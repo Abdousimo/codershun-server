@@ -640,4 +640,103 @@ export class ShortlistsService {
       items: anonymisedItems,
     };
   }
+
+  /**
+   * Generates a valid minimal PDF binary buffer for an anonymised shortlist (FR-SEC-01).
+   */
+  async generateAnonymisedPdf(
+    shortlistId: string,
+    currentUser: AuthenticatedUser,
+  ): Promise<Buffer> {
+    const shortlist = await this.prisma.shortlists.findUnique({
+      where: { id: shortlistId },
+    });
+
+    if (!shortlist) {
+      throw new NotFoundException(`Shortlist ${shortlistId} not found`);
+    }
+
+    const request = await this.prisma.talentRequests.findUnique({
+      where: { id: shortlist.requestId },
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Talent request ${shortlist.requestId} not found`);
+    }
+
+    if (
+      (currentUser.role === UserRole.client_admin || currentUser.role === UserRole.client_user) &&
+      request.companyId !== currentUser.companyId
+    ) {
+      throw new ForbiddenException("Access to this shortlist is denied");
+    }
+
+    const clientShortlist = await this.mapToAnonymisedShortlist(shortlist, request);
+
+    const textLines: string[] = [
+      "CODERS HUB - CANDIDATE SHORTLIST",
+      "==================================",
+      `Request Role: ${clientShortlist.roleTitle || "Talent Request"} (v${clientShortlist.version})`,
+      `Shortlist ID: ${clientShortlist.id}`,
+      `Published: ${clientShortlist.publishedAt ?? "Draft"}`,
+      "",
+      "SELECTED CANDIDATES (ANONYMISED PROFILES)",
+      "------------------------------------------",
+    ];
+
+    clientShortlist.items.forEach((item, idx) => {
+      textLines.push(`${idx + 1}. Candidate: ${item.publicSlug}`);
+      textLines.push(`   Title: ${item.roleTitle || "Software Engineer"} | Seniority: ${item.seniority || "Mid"}`);
+      if (item.experienceYears) textLines.push(`   Experience: ${item.experienceYears} years`);
+      if (item.skills.length > 0) textLines.push(`   Key Skills: ${item.skills.slice(0, 8).join(", ")}`);
+      if (item.recruiterNote) textLines.push(`   Recruiter Note: ${item.recruiterNote}`);
+      if (item.proposedClientPrice) {
+        textLines.push(`   Indicative Price: ${item.proposedClientPrice} ${item.proposedCurrency ?? "EUR"}/month`);
+      }
+      textLines.push("");
+    });
+
+    return this.renderSimplePdf(textLines);
+  }
+
+  private renderSimplePdf(lines: string[]): Buffer {
+    let streamContent = "BT\n/F1 12 Tf\n50 750 Td\n15 TL\n";
+    for (const line of lines) {
+      const sanitized = line.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+      streamContent += `(${sanitized}) '\n`;
+    }
+    streamContent += "ET";
+
+    const streamLength = Buffer.byteLength(streamContent, "utf-8");
+
+    const pdfObjects = [
+      "%PDF-1.4",
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj",
+      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj",
+      `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj`,
+      `4 0 obj\n<< /Length ${streamLength} >>\nstream\n${streamContent}\nendstream\nendobj`,
+      "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj",
+    ];
+
+    let offset = 0;
+    const offsets: number[] = [];
+    let body = "";
+
+    for (let i = 0; i < pdfObjects.length; i++) {
+      if (i > 0) {
+        offsets.push(offset);
+      }
+      body += pdfObjects[i] + "\n";
+      offset = Buffer.byteLength(body, "utf-8");
+    }
+
+    const startXref = offset;
+    let xref = `xref\n0 ${pdfObjects.length}\n0000000000 65535 f \n`;
+    for (const off of offsets) {
+      xref += off.toString().padStart(10, "0") + " 00000 n \n";
+    }
+
+    const trailer = `trailer\n<< /Size ${pdfObjects.length} /Root 1 0 R >>\nstartxref\n${startXref}\n%%EOF`;
+    return Buffer.from(body + xref + trailer, "utf-8");
+  }
 }

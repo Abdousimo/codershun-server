@@ -206,13 +206,18 @@ export class PlacementReviewsService {
       (t) => months >= t.fromMonth && (t.toMonth === null || months < t.toMonth),
     );
 
-    // Default multiplier: 0 after 24 months, 3 before 6 months
     let multiplier = new Prisma.Decimal("3.0");
     let buyoutTierId: string | null = null;
 
     if (matchedTier) {
       multiplier = matchedTier.multiplier;
       buyoutTierId = matchedTier.id;
+    } else if (tiers.length > 0) {
+      const lastTier = tiers[tiers.length - 1];
+      if (months >= (lastTier.toMonth ?? lastTier.fromMonth)) {
+        multiplier = lastTier.multiplier;
+        buyoutTierId = lastTier.id;
+      }
     } else if (months >= 24) {
       multiplier = new Prisma.Decimal("0.0");
     }

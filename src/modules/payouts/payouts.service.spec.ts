@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, UnprocessableEntityException } from "@nestjs/common";
 import { PayoutLineKind, PayoutStatus, PaymentMethod, UserRole } from "../../generated/prisma/client";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
 import { PayoutsService } from "./payouts.service";
@@ -72,7 +72,7 @@ describe("PayoutsService", () => {
         { talentId: "talent-1", periodMonth: "2020-01-01", currency: "EUR" },
         finance,
       ),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(UnprocessableEntityException);
   });
 
   it("FR-PAY-02: records currency, FX rate, fees, method and transfer reference", async () => {

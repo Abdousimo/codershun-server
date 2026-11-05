@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, UnprocessableEntityException } from "@nestjs/common";
 import {
   PaymentMethod,
   ReferralStatus,
@@ -121,7 +121,7 @@ describe("ReferralsService", () => {
         },
         sales,
       ),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(UnprocessableEntityException);
   });
 
   it("FR-REF-01: requires two paid invoices and a passed trial before payable", async () => {

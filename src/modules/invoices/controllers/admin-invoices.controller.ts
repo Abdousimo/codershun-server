@@ -34,36 +34,43 @@ export class AdminInvoicesController {
   }
 
   @Post()
+  @Roles(UserRole.super_admin, UserRole.finance)
   create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthenticatedUser) {
     return this.invoicesService.create(dto, user);
   }
 
   @Patch(":id")
+  @Roles(UserRole.super_admin, UserRole.finance)
   update(@Param("id", ParseUUIDPipe) id: string, @Body() dto: UpdateInvoiceDto, @CurrentUser() user: AuthenticatedUser) {
     return this.invoicesService.update(id, dto, user);
   }
 
   @Post(":id/lines")
+  @Roles(UserRole.super_admin, UserRole.finance)
   addLine(@Param("id", ParseUUIDPipe) id: string, @Body() dto: CreateInvoiceLineDto, @CurrentUser() user: AuthenticatedUser) {
     return this.invoicesService.addLine(id, dto, user);
   }
 
   @Post(":id/issue")
+  @Roles(UserRole.super_admin, UserRole.finance)
   issue(@Param("id", ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.invoicesService.issue(id, user);
   }
 
   @Post(":id/credit-note")
+  @Roles(UserRole.super_admin, UserRole.finance)
   creditNote(@Param("id", ParseUUIDPipe) id: string, @Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthenticatedUser) {
     return this.invoicesService.createCreditNote(id, dto, user);
   }
 
   @Post(":id/payments")
+  @Roles(UserRole.super_admin, UserRole.finance)
   recordPayment(@Param("id", ParseUUIDPipe) id: string, @Body() dto: CreatePaymentDto, @CurrentUser() user: AuthenticatedUser) {
     return this.invoicesService.recordPayment(id, dto, user);
   }
 
   @Post(":id/pdf")
+  @Roles(UserRole.super_admin, UserRole.finance)
   @UseInterceptors(FileInterceptor("file"))
   @ApiConsumes("multipart/form-data")
   uploadPdf(@Param("id", ParseUUIDPipe) id: string, @UploadedFile() file: UploadedMulterFile, @CurrentUser() user: AuthenticatedUser) {

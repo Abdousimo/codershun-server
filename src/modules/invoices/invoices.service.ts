@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from "@nestjs/common";
 import {
   InvoiceKind,
@@ -50,7 +51,10 @@ export class InvoicesService {
 
   private assertDraft(status: InvoiceStatus): void {
     if (status !== InvoiceStatus.draft) {
-      throw new BadRequestException("Issued invoices are immutable; create a credit note instead");
+      throw new UnprocessableEntityException({
+        code: "FR-BILL-02",
+        message: "Issued invoices are immutable; create a credit note instead (FR-BILL-02)",
+      });
     }
   }
 
@@ -238,7 +242,10 @@ export class InvoicesService {
     }
     const paid = new Prisma.Decimal(invoice.amountPaid).plus(new Prisma.Decimal(dto.amount));
     if (paid.greaterThan(new Prisma.Decimal(invoice.total))) {
-      throw new BadRequestException("Payment exceeds the invoice total");
+      throw new UnprocessableEntityException({
+        code: "FR-BILL-03",
+        message: "Payment exceeds the invoice total (FR-BILL-03)",
+      });
     }
     await this.prisma.withUserContext(user, async (tx) => {
       await tx.payments.create({

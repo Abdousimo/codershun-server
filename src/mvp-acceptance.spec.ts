@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, UnprocessableEntityException } from "@nestjs/common";
 import { NotificationChannel, UserRole } from "./generated/prisma/client";
 import type { AuthenticatedUser } from "./common/types/authenticated-user";
 import { PricingService } from "./modules/settings/pricing.service";
@@ -83,7 +83,7 @@ describe("MVP acceptance regression suite", () => {
         },
         admin,
       ),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(UnprocessableEntityException);
   });
 
   it("restricts dashboard access to staff", async () => {

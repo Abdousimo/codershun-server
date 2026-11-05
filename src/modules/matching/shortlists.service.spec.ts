@@ -389,5 +389,50 @@ describe("ShortlistsService", () => {
         ),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it("FR-SEC-01: generates valid anonymised PDF export", async () => {
+      mockPrisma.shortlists.findUnique.mockResolvedValue({
+        id: "shortlist-1",
+        requestId: "req-1",
+        version: 1,
+        status: ShortlistStatus.published,
+      });
+      mockPrisma.talentRequests.findUnique.mockResolvedValue({
+        id: "req-1",
+        roleTitle: "Backend Developer",
+        seniority: SeniorityLevel.senior,
+        companyId: "company-1",
+      });
+      mockPrisma.shortlistItems.findMany.mockResolvedValue([
+        {
+          id: "item-1",
+          talentId: "talent-1",
+          matchScore: 92,
+          recruiterNote: "Strong architect",
+          proposedClientPrice: new Prisma.Decimal("2500.00"),
+          proposedCurrency: "EUR",
+          sortOrder: 1,
+        },
+      ]);
+      mockPrisma.talents.findMany.mockResolvedValue([
+        {
+          id: "talent-1",
+          publicSlug: "dev-alger-42",
+          headline: "Senior Cloud Architect",
+          seniority: SeniorityLevel.senior,
+          yearsExperience: 8,
+          city: "Algiers",
+          countryCode: "DZ",
+          summary: "Expert in distributed systems",
+        },
+      ]);
+
+      const buffer = await service.generateAnonymisedPdf("shortlist-1", adminUser);
+      expect(buffer).toBeInstanceOf(Buffer);
+      const pdfText = buffer.toString("utf-8");
+      expect(pdfText).toContain("%PDF-1.4");
+      expect(pdfText).toContain("dev-alger-42");
+      expect(pdfText).toContain("CODERS HUB - CANDIDATE SHORTLIST");
+    });
   });
 });

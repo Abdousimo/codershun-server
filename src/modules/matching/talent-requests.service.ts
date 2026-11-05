@@ -7,6 +7,7 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import {
+  InvoiceStatus,
   Prisma,
   RequestStatus,
   SeniorityLevel,
@@ -94,6 +95,23 @@ export class TalentRequestsService {
   }
 
   /**
+   * Helper to advance time by business hours, skipping weekends (Saturday & Sunday - FR-REQ-01).
+   */
+  private addBusinessHours(startDate: Date, hours: number): Date {
+    const result = new Date(startDate);
+    let remaining = hours;
+    while (remaining > 0) {
+      result.setTime(result.getTime() + 60 * 60 * 1000);
+      const day = result.getUTCDay();
+      // 0 is Sunday, 6 is Saturday
+      if (day !== 0 && day !== 6) {
+        remaining -= 1;
+      }
+    }
+    return result;
+  }
+
+  /**
    * Helper to resolve SLA business hours from settings.
    */
   private async getSlaHours(): Promise<number> {
@@ -134,10 +152,27 @@ export class TalentRequestsService {
       throw new NotFoundException(`Company ${targetCompanyId} not found`);
     }
 
-    // Calculate SLA deadline (FR-REQ-01)
+    // Enforce FR-BILL-03: Unpaid invoice overdue by > 30 days blocks new talent requests
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const overdueInvoice = await this.prisma.invoices.findFirst({
+      where: {
+        companyId: targetCompanyId,
+        status: { in: [InvoiceStatus.issued, InvoiceStatus.overdue, InvoiceStatus.partially_paid] },
+        dueDate: { lt: thirtyDaysAgo },
+      },
+      select: { id: true, number: true },
+    });
+    if (overdueInvoice) {
+      throw new UnprocessableEntityException({
+        code: "FR-BILL-03",
+        message: `Company has unpaid invoice ${overdueInvoice.number ?? overdueInvoice.id} overdue by more than 30 days. New talent requests are blocked (FR-BILL-03).`,
+      });
+    }
+
+    // Calculate SLA deadline (FR-REQ-01: business hours excluding weekends)
     const slaHours = await this.getSlaHours();
     const now = new Date();
-    const slaDeadlineAt = new Date(now.getTime() + slaHours * 60 * 60 * 1000);
+    const slaDeadlineAt = this.addBusinessHours(now, slaHours);
 
     // Calculate indicative pricing if not given
     let indicativePriceMin: Prisma.Decimal | null = null;

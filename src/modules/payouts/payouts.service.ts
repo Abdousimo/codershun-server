@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from "@nestjs/common";
 import { PayoutLineKind, PayoutStatus, Prisma, UserRole } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -59,7 +60,10 @@ export class PayoutsService {
       periodMonth.getUTCMonth() !== previousMonth.getUTCMonth() ||
       periodMonth.getUTCDate() !== 1
     ) {
-      throw new BadRequestException("Payout period must be the immediately previous calendar month");
+      throw new UnprocessableEntityException({
+        code: "FR-PAY-01",
+        message: "Payout period must be the immediately previous calendar month (FR-PAY-01)",
+      });
     }
     const talent = await this.prisma.talents.findUnique({ where: { id: dto.talentId } });
     if (!talent) throw new NotFoundException(`Talent ${dto.talentId} not found`);

@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from "@nestjs/common";
 import {
   Prisma,
@@ -64,7 +65,10 @@ export class ReferralsService {
       throw new BadRequestException("Referrer is not active or does not exist");
     }
     if (dto.companyId && referrer.companyId === dto.companyId) {
-      throw new BadRequestException("A referrer cannot refer their own company");
+      throw new UnprocessableEntityException({
+        code: "FR-REF-01",
+        message: "A referrer cannot refer their own company (FR-REF-01)",
+      });
     }
     const existing = await this.prisma.referrals.findFirst({
       where: {
