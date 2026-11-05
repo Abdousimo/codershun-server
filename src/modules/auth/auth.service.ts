@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -37,9 +38,9 @@ export class AuthService {
   private readonly refreshTtlMs: number;
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(JwtService) private readonly jwtService: JwtService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
   ) {
     this.accessTtlSeconds = 900; // 15 minutes
     const refreshDays = this.configService.get<number>("auth.refreshTtlDays", 30);
@@ -189,7 +190,12 @@ export class AuthService {
     }
 
     // Verify TOTP code or recovery code
-    let isValidCode = verifySync({ token: input.code, secret: user.twoFactorSecret }).valid;
+    let isValidCode = false;
+    try {
+      isValidCode = verifySync({ token: input.code, secret: user.twoFactorSecret }).valid;
+    } catch {
+      isValidCode = false;
+    }
 
     if (!isValidCode && user.twoFactorRecoveryCodes.length > 0) {
       const codeIndex = user.twoFactorRecoveryCodes.indexOf(input.code);

@@ -3,10 +3,10 @@ import { UiLanguage, UserRole, UserStatus } from "../../../generated/prisma/clie
 import { StaffProfileResponseDto } from "./staff-profile-response.dto";
 
 export class UserSummaryResponseDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   email!: string;
 
   @ApiProperty({ enum: UserRole })
@@ -15,47 +15,48 @@ export class UserSummaryResponseDto {
   @ApiProperty({ enum: UserStatus })
   status!: UserStatus;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   firstName?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   lastName?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   phone?: string | null;
 
   @ApiProperty({ enum: UiLanguage })
   language!: UiLanguage;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   timezone!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: Boolean })
   twoFactorEnabled!: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: Date })
   lastLoginAt?: Date | null;
 
-  @ApiProperty()
+  @ApiProperty({ type: Date })
   createdAt!: Date;
 }
 
 export class UserDetailResponseDto extends UserSummaryResponseDto {
-  @ApiPropertyOptional({ type: StaffProfileResponseDto })
+  @ApiPropertyOptional({ type: () => StaffProfileResponseDto })
   staffProfile?: StaffProfileResponseDto | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   companyId?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   talentId?: string | null;
 }
 
 export class PaginatedUsersResponseDto {
-  @ApiProperty({ type: [UserSummaryResponseDto] })
+  @ApiProperty({ type: () => [UserSummaryResponseDto] })
   data!: UserSummaryResponseDto[];
 
   @ApiProperty({
+    type: Object,
     example: { page: 1, pageSize: 25, total: 42, totalPages: 2 },
   })
   meta!: {

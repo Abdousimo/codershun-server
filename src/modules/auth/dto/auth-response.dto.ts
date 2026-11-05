@@ -2,16 +2,17 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import type { UserRole } from "../../../generated/prisma/client";
 
 export class AuthSessionResponseDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   accessToken!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   refreshToken!: string;
 
-  @ApiProperty({ example: 900 })
+  @ApiProperty({ type: Number, example: 900 })
   expiresIn!: number;
 
   @ApiProperty({
+    type: Object,
     example: { id: "uuid", email: "user@example.com", role: "talent" },
   })
   user!: {
@@ -24,21 +25,21 @@ export class AuthSessionResponseDto {
 }
 
 export class Require2faResponseDto {
-  @ApiProperty({ example: true })
+  @ApiProperty({ type: Boolean, example: true })
   mfaRequired: true = true;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   preAuthToken!: string;
 }
 
 export class TwoFactorSetupResponseDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   secret!: string;
 
-  @ApiProperty({ description: "Data URI for QR code image" })
+  @ApiProperty({ type: String, description: "Data URI for QR code image" })
   qrCodeUrl!: string;
 
-  @ApiProperty({ description: "otpauth:// URI for authenticator apps" })
+  @ApiProperty({ type: String, description: "otpauth:// URI for authenticator apps" })
   otpAuthUrl!: string;
 }
 

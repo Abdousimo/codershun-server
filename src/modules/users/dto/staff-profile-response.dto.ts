@@ -1,28 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class StaffProfileResponseDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   userId!: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   jobTitle?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   whatsapp?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   calendarUrl?: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String })
   slackUserId?: string | null;
 
-  @ApiProperty()
+  @ApiProperty({ type: Boolean })
   isReviewer!: boolean;
 
-  @ApiProperty()
+  @ApiProperty({ type: Boolean })
   isExternalReviewer!: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: Number })
   reviewerFee?: number | null;
 }
 

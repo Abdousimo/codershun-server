@@ -68,7 +68,8 @@ async function bootstrap() {
       .addTag("Admin / Audit & Dashboard", "Audit history and operational KPIs")
       .build();
 
-    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    try {
+      const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup("api/docs", app, document, {
       customSiteTitle: "Coders Hub API Documentation",
       jsonDocumentUrl: "api/docs-json",
@@ -80,7 +81,10 @@ async function bootstrap() {
         operationsSorter: "alpha",
       },
     });
-    logger.log("Swagger documentation initialized at /api/docs (OpenAPI JSON: /api/docs-json)");
+      logger.log("Swagger documentation initialized at /api/docs (OpenAPI JSON: /api/docs-json)");
+    } catch (swaggerErr) {
+      logger.warn(`Swagger documentation initialization skipped: ${(swaggerErr as Error).message}`);
+    }
   }
 
   const port = configService.get<number>("port", 3001);
