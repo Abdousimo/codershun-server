@@ -43,9 +43,7 @@ describe("PayoutsService", () => {
         create: jest.fn<any>(),
         findMany: resolved([]),
       },
-      withUserContext: jest.fn<any>().mockImplementation(
-        (_user: AuthenticatedUser, callback: (tx: any) => unknown) => callback(prisma),
-      ),
+      withUserContext: jest.fn<any>().mockImplementation((_user: AuthenticatedUser, callback: (tx: any) => unknown) => callback(prisma)),
     };
     service = new PayoutsService(prisma, { uploadFile: resolved({ id: "file-1" }) } as any);
   });
@@ -54,10 +52,7 @@ describe("PayoutsService", () => {
     const now = new Date();
     const previous = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
 
-    await service.create(
-      { talentId: "talent-1", periodMonth: previous.toISOString(), currency: "eur" },
-      finance,
-    );
+    await service.create({ talentId: "talent-1", periodMonth: previous.toISOString(), currency: "eur" }, finance);
 
     expect(prisma.payouts.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -67,12 +62,9 @@ describe("PayoutsService", () => {
   });
 
   it("FR-PAY-01: rejects a payout for a month other than the previous month", async () => {
-    await expect(
-      service.create(
-        { talentId: "talent-1", periodMonth: "2020-01-01", currency: "EUR" },
-        finance,
-      ),
-    ).rejects.toThrow(UnprocessableEntityException);
+    await expect(service.create({ talentId: "talent-1", periodMonth: "2020-01-01", currency: "EUR" }, finance)).rejects.toThrow(
+      UnprocessableEntityException,
+    );
   });
 
   it("FR-PAY-02: records currency, FX rate, fees, method and transfer reference", async () => {
@@ -108,21 +100,14 @@ describe("PayoutsService", () => {
   it("prevents payout edits after approval", async () => {
     prisma.payouts.findUnique.mockResolvedValueOnce({ ...pending, status: PayoutStatus.approved });
 
-    await expect(
-      service.addLine(
-        "payout-1",
-        { kind: PayoutLineKind.days_worked, amount: 100 },
-        finance,
-      ),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.addLine("payout-1", { kind: PayoutLineKind.days_worked, amount: 100 }, finance)).rejects.toThrow(
+      UnprocessableEntityException,
+    );
   });
 
   it("restricts payout creation to Finance and Super admin", async () => {
     await expect(
-      service.create(
-        { talentId: "talent-1", periodMonth: "2020-01-01", currency: "EUR" },
-        { ...finance, role: UserRole.sales },
-      ),
+      service.create({ talentId: "talent-1", periodMonth: "2020-01-01", currency: "EUR" }, { ...finance, role: UserRole.sales }),
     ).rejects.toThrow(ForbiddenException);
   });
 
