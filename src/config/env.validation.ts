@@ -18,6 +18,10 @@ export class EnvironmentVariables {
   PORT: number = 3001;
 
   @IsString()
+  @IsOptional()
+  FRONTEND_URL: string = "http://localhost:3000";
+
+  @IsString()
   DATABASE_URL!: string;
 
   @IsString()
