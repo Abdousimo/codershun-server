@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
-import { ExecutionContext, ForbiddenException } from "@nestjs/common";
+import type { ExecutionContext } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 
 import { RolesGuard } from "./roles.guard";

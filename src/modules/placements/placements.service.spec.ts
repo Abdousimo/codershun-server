@@ -528,7 +528,7 @@ describe("PlacementsService", () => {
         updatedAt: new Date(),
       });
 
-      const result = await service.findById("plc-2", recruiterUser);
+      const result = (await service.findById("plc-2", recruiterUser)) as any;
 
       expect(result.talentPay).toBe("1200.00");
       expect(result.clientPrice).toBeUndefined();

@@ -186,7 +186,7 @@ describe("TalentsService", () => {
       mockPrisma.talents.findMany.mockResolvedValue([]);
       mockPrisma.talents.count.mockResolvedValue(0);
 
-      await service.getPublicShowcase({ seniority: SeniorityLevel.senior });
+      await service.getPublicShowcase({ seniority: SeniorityLevel.senior, page: 1, pageSize: 10 });
 
       expect(mockPrisma.talents.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -242,7 +242,7 @@ describe("TalentsService", () => {
         },
       ]);
 
-      const result = await service.getPublicShowcase({});
+      const result = await service.getPublicShowcase({ page: 1, pageSize: 10 });
 
       expect(result.data).toHaveLength(1);
       const profile = result.data[0];

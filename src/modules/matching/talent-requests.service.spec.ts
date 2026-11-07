@@ -241,6 +241,9 @@ describe("TalentRequestsService", () => {
           {
             companyId: "comp-1",
             roleTitle: "Backend Developer",
+            engagementModel: "full_time" as any,
+            talentsCount: 1,
+            timeSharePct: 100,
           },
           adminUser,
         ),

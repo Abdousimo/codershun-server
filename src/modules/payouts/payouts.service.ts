@@ -41,7 +41,7 @@ export class PayoutsService {
 
   private assertPending(status: PayoutStatus): void {
     if (status !== PayoutStatus.pending) {
-      throw new BadRequestException("Approved or paid payouts cannot be edited");
+      throw new UnprocessableEntityException("Approved or paid payouts cannot be edited");
     }
   }
 

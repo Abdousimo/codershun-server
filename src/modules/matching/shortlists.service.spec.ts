@@ -114,7 +114,7 @@ describe("ShortlistsService", () => {
       });
       mockPrisma.talents.findUnique.mockResolvedValue({
         id: "talent-1",
-        vettingStage: VettingStage.technical_review, // NOT vetted
+        vettingStage: VettingStage.tech_interview, // NOT vetted
         status: TalentStatus.available,
         isBlacklisted: false,
       });
@@ -202,8 +202,6 @@ describe("ShortlistsService", () => {
         requestId: "req-1",
         version: 1,
         status: ShortlistStatus.draft,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
       });
