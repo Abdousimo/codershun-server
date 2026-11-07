@@ -1,7 +1,7 @@
-
+src/generated
 node_modules
 dist
 coverage
 .env
-
+uploads
 
