@@ -15,6 +15,19 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  const frontendOrigins = configService
+    .get<string>("frontendUrl", "http://localhost:3000")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  app.enableCors({
+    origin: ['http://localhost:3000'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', "application/json"],
+    credentials: true,
+  });
+
   // Global prefix /api/v1
   app.setGlobalPrefix("api/v1", {
     exclude: [{ path: "", method: RequestMethod.GET }],
