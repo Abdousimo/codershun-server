@@ -15,15 +15,7 @@ export interface SmtpConfig {
   agentFrom: string;
 }
 
-// Hardcoded SMTP credentials as requested:
-// EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-// EMAIL_HOST = 'smtp.gmail.com'
-// EMAIL_PORT = 587
-// EMAIL_USE_TLS = True
-// EMAIL_HOST_USER = 'testingtestingapp5@gmail.com'
-// EMAIL_HOST_PASSWORD = 'ufpp qlla mawt wrcq'
-// DEFAULT_FROM_EMAIL = 'testingtestingapp5@gmail.com'
-// AGENT_FROM_EMAIL = 'testingtestingapp5@gmail.com'
+// Default fallback SMTP configuration:
 export const HARDCODED_SMTP_CONFIG: SmtpConfig = {
   backend: "django.core.mail.backends.smtp.EmailBackend",
   host: "smtp.gmail.com",
@@ -32,25 +24,49 @@ export const HARDCODED_SMTP_CONFIG: SmtpConfig = {
   secure: false, // port 587 uses STARTTLS
   auth: {
     user: "testingtestingapp5@gmail.com",
-    pass: "ufpp qlla mawt wrcq",
+    pass: "ufppqllamawtwrcq",
   },
   defaultFrom: "testingtestingapp5@gmail.com",
   agentFrom: "testingtestingapp5@gmail.com",
 };
 
+export function getActiveSmtpConfig(): SmtpConfig {
+  const hostUser = (process.env.EMAIL_HOST_USER || HARDCODED_SMTP_CONFIG.auth.user).trim();
+  // Strip any internal spaces Google app passwords commonly display (e.g. 'ufpp qlla mawt wrcq' -> 'ufppqllamawtwrcq')
+  const rawPass = process.env.EMAIL_HOST_PASSWORD || HARDCODED_SMTP_CONFIG.auth.pass;
+  const hostPass = rawPass.trim().replace(/\s+/g, "");
+  const host = (process.env.EMAIL_HOST || HARDCODED_SMTP_CONFIG.host).trim();
+  const port = parseInt(process.env.EMAIL_PORT || String(HARDCODED_SMTP_CONFIG.port), 10);
+  const from = (process.env.DEFAULT_FROM_EMAIL || hostUser).trim();
+
+  return {
+    backend: process.env.EMAIL_BACKEND || HARDCODED_SMTP_CONFIG.backend,
+    host,
+    port,
+    useTls: true,
+    secure: port === 465,
+    auth: {
+      user: hostUser,
+      pass: hostPass,
+    },
+    defaultFrom: from,
+    agentFrom: (process.env.AGENT_FROM_EMAIL || from).trim(),
+  };
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: Transporter;
 
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: HARDCODED_SMTP_CONFIG.host,
-      port: HARDCODED_SMTP_CONFIG.port,
-      secure: HARDCODED_SMTP_CONFIG.secure,
+  private createTransporter(): Transporter {
+    const config = getActiveSmtpConfig();
+    return nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
       auth: {
-        user: HARDCODED_SMTP_CONFIG.auth.user,
-        pass: HARDCODED_SMTP_CONFIG.auth.pass,
+        user: config.auth.user,
+        pass: config.auth.pass,
       },
       tls: {
         rejectUnauthorized: false,
@@ -65,9 +81,12 @@ export class MailService {
     html?: string;
     from?: string;
   }): Promise<boolean> {
+    const config = getActiveSmtpConfig();
+    const transporter = this.createTransporter();
+
     try {
-      const from = options.from || HARDCODED_SMTP_CONFIG.defaultFrom;
-      const info = await this.transporter.sendMail({
+      const from = options.from || config.defaultFrom;
+      const info = await transporter.sendMail({
         from: `"Coders Hub" <${from}>`,
         to: options.to,
         subject: options.subject,
@@ -77,15 +96,37 @@ export class MailService {
       this.logger.log(`Email sent successfully to ${options.to}: ${info.messageId}`);
       return true;
     } catch (error) {
-      this.logger.error(
-        `Failed to send email to ${options.to}: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error.stack : undefined
-      );
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to send email to ${options.to}: ${errorMsg}`);
+
+      if (errorMsg.includes("BadCredentials") || errorMsg.includes("535")) {
+        this.logger.warn(`
+================================================================================
+⚠️ [MailService] Gmail SMTP Authentication Failed (535 BadCredentials)
+Target Account: ${config.auth.user}
+Reason: Google rejected the username or app password.
+
+How to fix:
+1. Ensure 2-Step Verification is active on: ${config.auth.user}
+2. Open: https://myaccount.google.com/apppasswords
+3. Generate a new 16-character App Password (e.g. named "CodersHub Backend").
+4. Update EMAIL_HOST_PASSWORD in backend/.env (or environment variables).
+================================================================================
+        `);
+      }
       return false;
     }
   }
 
   async sendPasswordResetOtp(to: string, otp: string): Promise<boolean> {
+    // Print clear visual banner so developers/testers can always see the code in terminal
+    this.logger.log(`
+================================================================================
+🔑 [MailService] PASSWORD RESET OTP CODE FOR: ${to}
+👉 VERIFICATION CODE: ${otp}  (Valid for 15 minutes)
+================================================================================
+    `);
+
     const subject = `Your Coders Hub Password Reset Code: ${otp}`;
     const text = `Hello,\n\nYou requested to reset your password for your Coders Hub account.\n\nYour 6-digit OTP verification code is: ${otp}\n\nThis code will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.`;
     const html = `
