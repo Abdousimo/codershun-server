@@ -32,6 +32,7 @@ describe("AuthService", () => {
         create: jest.fn<any>(),
         findFirst: jest.fn<any>(),
         update: jest.fn<any>(),
+        deleteMany: jest.fn<any>(),
       } as any,
       talents: {
         findFirst: jest.fn<any>().mockResolvedValue(null),
@@ -50,10 +51,16 @@ describe("AuthService", () => {
       get: jest.fn<any>().mockReturnValue(30),
     };
 
+    const mailService = {
+      sendMail: jest.fn<any>().mockResolvedValue(true),
+      sendPasswordResetOtp: jest.fn<any>().mockResolvedValue(true),
+    };
+
     authService = new AuthService(
       prisma as PrismaService,
       jwtService as JwtService,
       configService as ConfigService,
+      mailService as any,
     );
   });
 
@@ -276,6 +283,87 @@ describe("AuthService", () => {
       });
 
       await expect(authService.refresh("stolen-token")).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe("Password Reset with OTP Code", () => {
+    it("should generate 6-digit OTP code and send email when forgotPassword is requested", async () => {
+      (prisma.users!.findUnique as jest.Mock<any>).mockResolvedValue({
+        id: "user-1",
+        email: "user@example.com",
+      });
+      (prisma.authTokens!.deleteMany as jest.Mock<any>).mockResolvedValue({ count: 1 });
+      (prisma.authTokens!.findFirst as jest.Mock<any>).mockResolvedValue(null);
+      (prisma.authTokens!.create as jest.Mock<any>).mockResolvedValue({ id: "token-1" });
+
+      const result = await authService.forgotPassword("user@example.com");
+
+      expect(result.message).toContain("password reset code has been sent");
+      expect(result.code).toMatch(/^\d{6}$/);
+      expect(prisma.authTokens!.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: "user-1",
+            email: "user@example.com",
+            type: AuthTokenType.password_reset,
+          }),
+        }),
+      );
+    });
+
+    it("should verify valid OTP code successfully", async () => {
+      const code = "123456";
+      (prisma.authTokens!.findFirst as jest.Mock<any>).mockResolvedValue({
+        id: "token-1",
+        email: "user@example.com",
+        usedAt: null,
+        expiresAt: new Date(Date.now() + 600000),
+      });
+
+      const result = await authService.verifyResetCode(code, "user@example.com");
+      expect(result.valid).toBe(true);
+      expect(result.email).toBe("user@example.com");
+    });
+
+    it("should reject expired or invalid OTP code", async () => {
+      (prisma.authTokens!.findFirst as jest.Mock<any>).mockResolvedValue(null);
+      await expect(authService.verifyResetCode("999999")).rejects.toThrow(UnauthorizedException);
+    });
+
+    it("should reset password and revoke all sessions using OTP code", async () => {
+      const code = "123456";
+      (prisma.authTokens!.findFirst as jest.Mock<any>).mockResolvedValue({
+        id: "token-1",
+        userId: "user-1",
+        email: "user@example.com",
+        usedAt: null,
+        expiresAt: new Date(Date.now() + 600000),
+      });
+      (prisma.authTokens!.update as jest.Mock<any>).mockResolvedValue({});
+      (prisma.users!.update as jest.Mock<any>).mockResolvedValue({});
+      (prisma.userSessions!.updateMany as jest.Mock<any>).mockResolvedValue({ count: 2 });
+
+      const result = await authService.resetPassword({
+        code,
+        token: code,
+        email: "user@example.com",
+        newPassword: "BrandNewPassword123!",
+      });
+
+      expect(result.success).toBe(true);
+      expect(prisma.authTokens!.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "token-1" },
+          data: expect.objectContaining({ usedAt: expect.any(Date) }),
+        }),
+      );
+      expect(prisma.users!.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "user-1" },
+          data: expect.objectContaining({ failedLoginCount: 0, lockedUntil: null }),
+        }),
+      );
+      expect(prisma.userSessions!.updateMany).toHaveBeenCalled();
     });
   });
 });

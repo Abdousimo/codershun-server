@@ -25,6 +25,7 @@ import { PayoutsModule } from "./modules/payouts/payouts.module";
 import { ReferralsModule } from "./modules/referrals/referrals.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { AuditDashboardModule } from "./modules/audit-dashboard/audit-dashboard.module";
+import { MailModule } from "./modules/mail/mail.module";
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AuditDashboardModule } from "./modules/audit-dashboard/audit-dashboard.
       validate: validateEnv,
     }),
     PrismaModule,
+    MailModule,
     HealthModule,
     AppFeatureModule,
     AuthModule,

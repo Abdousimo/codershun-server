@@ -11,7 +11,7 @@ import { LoginDto } from "./dto/login.dto";
 import { Login2faDto } from "./dto/login-2fa.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { MagicLinkRequestDto, MagicLinkVerifyDto } from "./dto/magic-link.dto";
-import { ForgotPasswordDto, ResetPasswordDto } from "./dto/password-reset.dto";
+import { ForgotPasswordDto, ResetPasswordDto, VerifyResetCodeDto } from "./dto/password-reset.dto";
 import { Enable2faDto, VerifyEmailDto } from "./dto/two-factor.dto";
 import {
   AuthSessionResponseDto,
@@ -109,15 +109,23 @@ export class AuthController {
   @Public()
   @Post("forgot-password")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Request a password reset email" })
+  @ApiOperation({ summary: "Request a password reset OTP code sent to email" })
   forgotPassword(@Body() input: ForgotPasswordDto) {
     return this.authService.forgotPassword(input.email);
   }
 
   @Public()
+  @Post("verify-reset-code")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Verify password reset OTP code before setting new password" })
+  verifyResetCode(@Body() input: VerifyResetCodeDto) {
+    return this.authService.verifyResetCode(input.code, input.email);
+  }
+
+  @Public()
   @Post("reset-password")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Reset password using a valid reset token" })
+  @ApiOperation({ summary: "Reset password using a valid reset OTP code or token" })
   resetPassword(@Body() input: ResetPasswordDto) {
     return this.authService.resetPassword(input);
   }

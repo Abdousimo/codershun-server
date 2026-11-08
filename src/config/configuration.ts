@@ -14,4 +14,14 @@ export default () => ({
   storage: {
     uploadDir: process.env.STORAGE_UPLOAD_DIR || "uploads",
   },
+  email: {
+    backend: process.env.EMAIL_BACKEND || "django.core.mail.backends.smtp.EmailBackend",
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.EMAIL_PORT || "587", 10),
+    useTls: process.env.EMAIL_USE_TLS === "True" || process.env.EMAIL_USE_TLS === "true" || true,
+    user: process.env.EMAIL_HOST_USER || "testingtestingapp5@gmail.com",
+    password: process.env.EMAIL_HOST_PASSWORD || "ufpp qlla mawt wrcq",
+    defaultFrom: process.env.DEFAULT_FROM_EMAIL || "testingtestingapp5@gmail.com",
+    agentFrom: process.env.AGENT_FROM_EMAIL || "testingtestingapp5@gmail.com",
+  },
 });

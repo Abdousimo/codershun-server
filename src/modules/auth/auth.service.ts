@@ -17,6 +17,7 @@ import QRCode from "qrcode";
 import { AuthTokenType, UserRole, UserStatus } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
+import { MailService } from "../mail/mail.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { Login2faDto } from "./dto/login-2fa.dto";
@@ -41,6 +42,7 @@ export class AuthService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(JwtService) private readonly jwtService: JwtService,
     @Inject(ConfigService) private readonly configService: ConfigService,
+    @Inject(MailService) private readonly mailService: MailService,
   ) {
     this.accessTtlSeconds = 900; // 15 minutes
     const refreshDays = this.configService.get<number>("auth.refreshTtlDays", 30);
@@ -381,18 +383,95 @@ export class AuthService {
     const user = await this.prisma.users.findUnique({ where: { email } });
 
     if (!user) {
-      return { message: "If your email is registered, password reset instructions have been sent." };
+      return { message: "If your email is registered, a password reset code has been sent." };
     }
 
-    const rawToken = await this.createAuthToken(user.id, email, AuthTokenType.password_reset, 60);
+    // Clean up older unconsumed password reset tokens for this user
+    await this.prisma.authTokens.deleteMany({
+      where: { userId: user.id, type: AuthTokenType.password_reset },
+    });
+
+    // Generate a 6-digit numeric OTP code
+    let otp = "";
+    let tokenHash = "";
+    for (let attempts = 0; attempts < 10; attempts++) {
+      otp = Math.floor(100000 + Math.random() * 900000).toString();
+      tokenHash = this.hashToken(otp);
+      const existing = await this.prisma.authTokens.findFirst({
+        where: { tokenHash, usedAt: null, expiresAt: { gt: new Date() } },
+      });
+      if (!existing) break;
+    }
+
+    await this.prisma.authTokens.create({
+      data: {
+        userId: user.id,
+        email,
+        type: AuthTokenType.password_reset,
+        tokenHash,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes TTL
+      },
+    });
+
+    // Send the 6-digit OTP code to user's email using hardcoded SMTP credentials
+    await this.mailService.sendPasswordResetOtp(email, otp);
+
     return {
-      message: "If your email is registered, password reset instructions have been sent.",
-      token: rawToken,
+      message: "If your email is registered, a password reset code has been sent to your email.",
+      email,
+      ...(process.env.NODE_ENV !== "production" ? { code: otp, token: otp } : {}),
+    };
+  }
+
+  async verifyResetCode(codeOrToken: string, email?: string) {
+    const rawCode = (codeOrToken || "").trim();
+    if (!rawCode) {
+      throw new BadRequestException("Verification code is required.");
+    }
+    const tokenHash = this.hashToken(rawCode);
+    const authToken = await this.prisma.authTokens.findFirst({
+      where: {
+        tokenHash,
+        type: AuthTokenType.password_reset,
+        ...(email ? { email: this.normalizeEmail(email) } : {}),
+      },
+    });
+
+    if (!authToken || authToken.usedAt || authToken.expiresAt <= new Date()) {
+      throw new UnauthorizedException("Invalid, expired, or already used verification code.");
+    }
+
+    return {
+      valid: true,
+      message: "Verification code is valid.",
+      email: authToken.email,
     };
   }
 
   async resetPassword(input: ResetPasswordDto) {
-    const authToken = await this.consumeAuthToken(input.token, AuthTokenType.password_reset);
+    const rawCode = (input.code || input.otp || input.token || "").trim();
+    if (!rawCode) {
+      throw new BadRequestException("Verification code is required.");
+    }
+
+    const tokenHash = this.hashToken(rawCode);
+    const authToken = await this.prisma.authTokens.findFirst({
+      where: {
+        tokenHash,
+        type: AuthTokenType.password_reset,
+        ...(input.email ? { email: this.normalizeEmail(input.email) } : {}),
+      },
+    });
+
+    if (!authToken || authToken.usedAt || authToken.expiresAt <= new Date()) {
+      throw new UnauthorizedException("Verification code is invalid, already used, or expired.");
+    }
+
+    await this.prisma.authTokens.update({
+      where: { id: authToken.id },
+      data: { usedAt: new Date() },
+    });
+
     const newHash = await this.hashPassword(input.newPassword);
 
     await this.prisma.users.update({

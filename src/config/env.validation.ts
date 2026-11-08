@@ -44,6 +44,37 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   STORAGE_UPLOAD_DIR?: string;
+
+  @IsString()
+  @IsOptional()
+  EMAIL_BACKEND?: string;
+
+  @IsString()
+  @IsOptional()
+  EMAIL_HOST?: string;
+
+  @IsNumber()
+  @IsOptional()
+  EMAIL_PORT?: number;
+
+  @IsOptional()
+  EMAIL_USE_TLS?: boolean | string;
+
+  @IsString()
+  @IsOptional()
+  EMAIL_HOST_USER?: string;
+
+  @IsString()
+  @IsOptional()
+  EMAIL_HOST_PASSWORD?: string;
+
+  @IsString()
+  @IsOptional()
+  DEFAULT_FROM_EMAIL?: string;
+
+  @IsString()
+  @IsOptional()
+  AGENT_FROM_EMAIL?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
