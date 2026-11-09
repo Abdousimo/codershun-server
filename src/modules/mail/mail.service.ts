@@ -23,11 +23,11 @@ export const HARDCODED_SMTP_CONFIG: SmtpConfig = {
   useTls: true,
   secure: false, // port 587 uses STARTTLS
   auth: {
-    user: "testingtestingapp5@gmail.com",
-    pass: "ufppqllamawtwrcq",
+    user: "codershub99@gmail.com",
+    pass: "udheclwwyswgyixg",
   },
-  defaultFrom: "testingtestingapp5@gmail.com",
-  agentFrom: "testingtestingapp5@gmail.com",
+  defaultFrom: "codershub99@gmail.com",
+  agentFrom: "codershub99@gmail.com",
 };
 
 export function getActiveSmtpConfig(): SmtpConfig {
