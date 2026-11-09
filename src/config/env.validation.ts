@@ -1,4 +1,5 @@
-import { plainToInstance } from "class-transformer";
+import "reflect-metadata";
+import { Type, plainToInstance } from "class-transformer";
 import { IsEnum, IsNumber, IsOptional, IsString, Min, MinLength, validateSync } from "class-validator";
 
 export enum Environment {
@@ -12,6 +13,7 @@ export class EnvironmentVariables {
   @IsOptional()
   NODE_ENV: Environment = Environment.Development;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   @IsOptional()
@@ -53,9 +55,10 @@ export class EnvironmentVariables {
   @IsOptional()
   EMAIL_HOST?: string;
 
+  @Type(() => Number)
   @IsNumber()
   @IsOptional()
-  EMAIL_PORT?: number;
+  EMAIL_PORT: number = 587;
 
   @IsOptional()
   EMAIL_USE_TLS?: boolean | string;
