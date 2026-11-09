@@ -43,6 +43,7 @@ describe("ShortlistsService", () => {
       shortlistItems: {
         upsert: jest.fn(),
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
         findMany: jest.fn().mockResolvedValue([]),
         count: jest.fn().mockResolvedValue(0),
         update: jest.fn(),

@@ -514,11 +514,21 @@ export class ShortlistsService {
       throw new ForbiddenException("Access to this shortlist is denied");
     }
 
-    const item = await this.prisma.shortlistItems.findUnique({
+    let item = await this.prisma.shortlistItems.findUnique({
       where: { shortlistId_talentId: { shortlistId, talentId } },
     });
 
     if (!item) {
+      try {
+        item = await this.prisma.shortlistItems.findUnique({
+          where: { id: talentId },
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!item || item.shortlistId !== shortlistId) {
       throw new NotFoundException(`Shortlist item for talent ${talentId} not found`);
     }
 
@@ -529,7 +539,7 @@ export class ShortlistsService {
     const now = new Date();
     await this.prisma.withUserContext(currentUser, async (tx) => {
       await tx.shortlistItems.update({
-        where: { shortlistId_talentId: { shortlistId, talentId } },
+        where: { id: item!.id },
         data: {
           clientDecision: dto.decision,
           clientDecisionReason: dto.decision === ClientDecision.not_a_fit ? dto.reason : null,
@@ -537,7 +547,7 @@ export class ShortlistsService {
           clientDecidedBy: currentUser.id,
           clientDecidedAt: now,
           // FR-SEC-01: contact revealed once interview is decided/booked
-          contactRevealedAt: dto.decision === ClientDecision.interview ? now : item.contactRevealedAt,
+          contactRevealedAt: dto.decision === ClientDecision.interview ? now : item!.contactRevealedAt,
         },
       });
 
@@ -556,6 +566,84 @@ export class ShortlistsService {
     });
 
     return this.findClientShortlistById(shortlistId, currentUser);
+  }
+
+  /**
+   * Public decision recording via share token (FR-SEC-01).
+   */
+  async recordPublicDecision(
+    token: string,
+    talentIdOrItemId: string,
+    dto: ShortlistClientDecisionDto,
+  ): Promise<ClientShortlistResponseDto> {
+    const tokenHash = this.hashToken(token);
+    const shortlist = await this.prisma.shortlists.findFirst({
+      where: { shareTokenHash: tokenHash },
+    });
+
+    if (!shortlist) {
+      throw new NotFoundException("Shortlist link is invalid or has expired");
+    }
+
+    if (shortlist.shareExpiresAt && shortlist.shareExpiresAt < new Date()) {
+      throw new ForbiddenException("This shortlist link has expired");
+    }
+
+    const request = await this.prisma.talentRequests.findUnique({
+      where: { id: shortlist.requestId },
+    });
+
+    if (!request) {
+      throw new NotFoundException(`Talent request ${shortlist.requestId} not found`);
+    }
+
+    let item = await this.prisma.shortlistItems.findUnique({
+      where: { shortlistId_talentId: { shortlistId: shortlist.id, talentId: talentIdOrItemId } },
+    });
+
+    if (!item) {
+      try {
+        item = await this.prisma.shortlistItems.findUnique({
+          where: { id: talentIdOrItemId },
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!item || item.shortlistId !== shortlist.id) {
+      throw new NotFoundException(`Shortlist item ${talentIdOrItemId} not found`);
+    }
+
+    if (dto.decision === ClientDecision.not_a_fit && !dto.reason) {
+      throw new BadRequestException("clientDecisionReason is required when marking a candidate as not_a_fit");
+    }
+
+    const now = new Date();
+    await this.prisma.shortlistItems.update({
+      where: { id: item.id },
+      data: {
+        clientDecision: dto.decision,
+        clientDecisionReason: dto.decision === ClientDecision.not_a_fit ? dto.reason : null,
+        clientComment: dto.comment,
+        clientDecidedAt: now,
+        contactRevealedAt: dto.decision === ClientDecision.interview ? now : item.contactRevealedAt,
+      },
+    });
+
+    if (
+      (dto.decision === ClientDecision.interview || dto.decision === ClientDecision.hire) &&
+      request.status === RequestStatus.shortlist_sent
+    ) {
+      await this.prisma.talentRequests.update({
+        where: { id: shortlist.requestId },
+        data: {
+          status: RequestStatus.interviewing,
+        },
+      });
+    }
+
+    return this.mapToAnonymisedShortlist(shortlist, request);
   }
 
   /**
@@ -610,6 +698,7 @@ export class ShortlistsService {
       const talent = talentMap.get(item.talentId);
       return {
         id: item.id,
+        talentId: item.talentId,
         publicSlug: talent?.publicSlug || `talent-${item.talentId.slice(0, 8)}`,
         roleTitle: talent?.headline,
         seniority: talent?.seniority,

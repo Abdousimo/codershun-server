@@ -111,6 +111,9 @@ export class AnonymisedShortlistItemDto {
   @ApiProperty()
   id!: string;
 
+  @ApiPropertyOptional()
+  talentId?: string;
+
   @ApiProperty({ description: "Public identifier/alias, e.g. dev-abc-123", example: "fullstack-react-89" })
   publicSlug!: string;
 
