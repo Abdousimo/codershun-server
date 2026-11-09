@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -40,7 +41,7 @@ import { TalentAdminResponseDto } from "../dto/talent-response.dto";
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Controller("admin/talents")
 export class AdminTalentsController {
-  constructor(private readonly talentsService: TalentsService) {}
+  constructor(@Inject(TalentsService) private readonly talentsService: TalentsService) {}
 
   @Get()
   @Roles(

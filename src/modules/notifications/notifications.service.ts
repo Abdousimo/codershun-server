@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { NotificationChannel, Prisma, UserRole, UiLanguage } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
@@ -11,7 +11,7 @@ const ADMIN_ROLES: UserRole[] = [UserRole.super_admin, UserRole.finance];
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async list(query: QueryNotificationsDto, user: AuthenticatedUser) {
     const where: Prisma.NotificationsWhereInput = { userId: user.id };

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   Query,
@@ -31,7 +32,7 @@ import {
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Controller("reference")
 export class ReferenceDataController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(@Inject(SettingsService) private readonly settingsService: SettingsService) {}
 
   // ==========================================
   // PUBLIC TAXONOMIES

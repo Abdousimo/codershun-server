@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
 
@@ -20,7 +20,7 @@ export const DEFAULT_ONBOARDING_ITEMS: DefaultOnboardingItem[] = [
 
 @Injectable()
 export class PlacementOnboardingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   /**
    * Seed default onboarding checklist for a newly created placement.

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -34,7 +35,7 @@ import { AddShortlistItemDto, UpdateShortlistItemDto } from "../dto/shortlist-it
 )
 @Controller("admin")
 export class AdminShortlistsController {
-  constructor(private readonly shortlistsService: ShortlistsService) {}
+  constructor(@Inject(ShortlistsService) private readonly shortlistsService: ShortlistsService) {}
 
   @Post("talent-requests/:requestId/shortlists")
   @ApiOperation({ summary: "Create a new draft shortlist for a talent request" })

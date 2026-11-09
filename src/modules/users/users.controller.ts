@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Param,
   Patch,
   Post,
@@ -46,7 +47,7 @@ const STAFF_ROLES: UserRole[] = [
 @Roles(UserRole.super_admin)
 @Controller("admin/users")
 export class AdminUsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(@Inject(UsersService) private readonly usersService: UsersService) {}
 
   @Get()
   @ApiOperation({ summary: "List users with pagination, filtering and search (Super admin only)" })
@@ -106,7 +107,7 @@ export class AdminUsersController {
 @ApiBearerAuth()
 @Controller("users")
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(@Inject(UsersService) private readonly usersService: UsersService) {}
 
   @Get("me")
   @ApiOperation({ summary: "Get own user profile, roles and scopes" })

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Post, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
@@ -20,7 +20,7 @@ import { QueryPayoutsDto } from "../dto/query-payouts.dto";
 @Roles(UserRole.super_admin, UserRole.finance)
 @Controller("admin/payouts")
 export class AdminPayoutsController {
-  constructor(private readonly payoutsService: PayoutsService) {}
+  constructor(@Inject(PayoutsService) private readonly payoutsService: PayoutsService) {}
 
   @Get()
   @ApiOperation({ summary: "List talent payouts" })

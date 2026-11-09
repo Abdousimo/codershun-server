@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { UserRole } from "../../generated/prisma/client";
@@ -17,7 +17,7 @@ import { BuyoutResultDto, PricingResultDto } from "./dto/pricing-result.dto";
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Controller("pricing")
 export class PricingController {
-  constructor(private readonly pricingService: PricingService) {}
+  constructor(@Inject(PricingService) private readonly pricingService: PricingService) {}
 
   @Get("rate-card/current")
   @Roles(

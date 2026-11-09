@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -46,7 +47,7 @@ export class PricingService {
     [SeniorityLevel.lead]: { pay: "2800.00", margin: "35.00" },
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   /**
    * Retrieves the current active rate card version with its entries.

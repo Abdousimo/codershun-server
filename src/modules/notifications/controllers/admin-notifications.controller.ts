@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
 import { AccessTokenGuard } from "../../../common/guards/access-token.guard";
@@ -15,7 +15,7 @@ import { UpsertEmailTemplateDto } from "../dto/email-template.dto";
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Controller("admin/notifications")
 export class AdminNotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(@Inject(NotificationsService) private readonly notificationsService: NotificationsService) {}
 
   @Get("templates")
   @ApiOperation({ summary: "List localized email templates" })

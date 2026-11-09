@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
@@ -21,7 +21,7 @@ import { QueryInvoicesDto } from "../dto/query-invoices.dto";
 @Roles(UserRole.super_admin, UserRole.finance, UserRole.sales, UserRole.account_manager)
 @Controller("admin/invoices")
 export class AdminInvoicesController {
-  constructor(private readonly invoicesService: InvoicesService) {}
+  constructor(@Inject(InvoicesService) private readonly invoicesService: InvoicesService) {}
 
   @Get()
   findAll(@Query() query: QueryInvoicesDto, @CurrentUser() user: AuthenticatedUser) {

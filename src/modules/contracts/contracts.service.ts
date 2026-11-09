@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -28,8 +29,8 @@ const STAFF_ROLES: UserRole[] = [
 @Injectable()
 export class ContractsService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly filesService: FilesService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(FilesService) private readonly filesService: FilesService,
   ) {}
 
   private assertCanEdit(user: AuthenticatedUser): void {

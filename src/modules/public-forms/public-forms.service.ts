@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 import * as crypto from "node:crypto";
 
 import {
@@ -32,9 +32,9 @@ export class PublicFormsService {
   private readonly logger = new Logger(PublicFormsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly pricingService: PricingService,
-    private readonly filesService: FilesService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PricingService) private readonly pricingService: PricingService,
+    @Inject(FilesService) private readonly filesService: FilesService,
   ) {}
 
   /**

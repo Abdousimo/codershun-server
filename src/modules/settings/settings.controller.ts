@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -45,7 +46,7 @@ import {
 @Roles(UserRole.super_admin, UserRole.finance)
 @Controller("admin/settings")
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(@Inject(SettingsService) private readonly settingsService: SettingsService) {}
 
   // ==========================================
   // GENERAL SETTINGS

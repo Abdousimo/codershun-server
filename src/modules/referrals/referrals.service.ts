@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -32,7 +33,7 @@ const FINANCE_ROLES: UserRole[] = [UserRole.super_admin, UserRole.finance];
 
 @Injectable()
 export class ReferralsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   private assertStaff(user: AuthenticatedUser): void {
     if (!STAFF_ROLES.includes(user.role)) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from "@nestjs/common";
+import { Controller, Get, Inject, Query } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { Public } from "../../../common/decorators/public.decorator";
@@ -9,7 +9,7 @@ import { TalentShowcaseResponseDto } from "../dto/talent-response.dto";
 @ApiTags("Talents (Public Showcase)")
 @Controller("talents")
 export class TalentsController {
-  constructor(private readonly talentsService: TalentsService) {}
+  constructor(@Inject(TalentsService) private readonly talentsService: TalentsService) {}
 
   @Public()
   @Get("showcase")

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -43,9 +44,9 @@ import { QueryPlacementsDto } from "../dto/query-placements.dto";
 @Controller("admin/placements")
 export class AdminPlacementsController {
   constructor(
-    private readonly placementsService: PlacementsService,
-    private readonly reviewsService: PlacementReviewsService,
-    private readonly onboardingService: PlacementOnboardingService,
+    @Inject(PlacementsService) private readonly placementsService: PlacementsService,
+    @Inject(PlacementReviewsService) private readonly reviewsService: PlacementReviewsService,
+    @Inject(PlacementOnboardingService) private readonly onboardingService: PlacementOnboardingService,
   ) {}
 
   @Get()

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -28,7 +29,7 @@ import {
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Controller("crm")
 export class CrmTimelineController {
-  constructor(private readonly crmService: CrmService) {}
+  constructor(@Inject(CrmService) private readonly crmService: CrmService) {}
 
   @Get("notes")
   @Roles(

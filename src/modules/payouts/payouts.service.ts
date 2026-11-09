@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -29,8 +30,8 @@ const STAFF_ROLES: UserRole[] = [
 @Injectable()
 export class PayoutsService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly filesService: FilesService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(FilesService) private readonly filesService: FilesService,
   ) {}
 
   private assertFinance(user: AuthenticatedUser): void {

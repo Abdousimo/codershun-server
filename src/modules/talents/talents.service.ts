@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -42,7 +43,7 @@ import {
 export class TalentsService {
   private readonly logger = new Logger(TalentsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   // ==========================================
   // CANDIDATE PROFILE CRUD & ATS

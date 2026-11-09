@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Inject,
   Param,
   ParseUUIDPipe,
   Query,
@@ -22,7 +23,7 @@ import { QueryPlacementsDto } from "../dto/query-placements.dto";
 @Roles(UserRole.talent)
 @Controller("talent/placements")
 export class TalentPlacementsController {
-  constructor(private readonly placementsService: PlacementsService) {}
+  constructor(@Inject(PlacementsService) private readonly placementsService: PlacementsService) {}
 
   @Get()
   @ApiOperation({ summary: "List assigned placements - FR-SEC-02 strictly hides client price and margin" })

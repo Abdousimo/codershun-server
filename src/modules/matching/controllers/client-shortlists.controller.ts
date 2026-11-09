@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   ParseUUIDPipe,
   Post,
@@ -23,7 +24,7 @@ import { ShortlistClientDecisionDto } from "../dto/client-decision.dto";
 @Roles(UserRole.client_admin, UserRole.client_user)
 @Controller("client/shortlists")
 export class ClientShortlistsController {
-  constructor(private readonly shortlistsService: ShortlistsService) {}
+  constructor(@Inject(ShortlistsService) private readonly shortlistsService: ShortlistsService) {}
 
   @Get(":id")
   @ApiOperation({ summary: "View published shortlist for own company (FR-SEC-01 strictly anonymised)" })

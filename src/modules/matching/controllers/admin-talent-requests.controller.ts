@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -38,8 +39,8 @@ import { QueryTalentRequestsDto } from "../dto/query-talent-requests.dto";
 @Controller("admin/talent-requests")
 export class AdminTalentRequestsController {
   constructor(
-    private readonly talentRequestsService: TalentRequestsService,
-    private readonly matchingService: MatchingService,
+    @Inject(TalentRequestsService) private readonly talentRequestsService: TalentRequestsService,
+    @Inject(MatchingService) private readonly matchingService: MatchingService,
   ) {}
 
   @Get()

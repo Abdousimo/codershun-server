@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Inject,
   Post,
   Req,
   UploadedFile,
@@ -33,7 +34,7 @@ import type { UploadedMulterFile } from "../files/files.controller";
 @Public()
 @Controller("public")
 export class PublicFormsController {
-  constructor(private readonly formsService: PublicFormsService) {}
+  constructor(@Inject(PublicFormsService) private readonly formsService: PublicFormsService) {}
 
   @Post("hire-requests")
   @ApiOperation({

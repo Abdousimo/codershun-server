@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from "@nestjs/common";
+import { ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import { Prisma, UserRole } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
@@ -16,7 +16,7 @@ const STAFF_ROLES: UserRole[] = [
 
 @Injectable()
 export class AuditDashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async listAudit(query: QueryAuditDto, user: AuthenticatedUser) {
     this.assertStaff(user);

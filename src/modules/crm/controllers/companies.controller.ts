@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -27,7 +28,7 @@ import { CreateContactDto, UpdateContactDto } from "../dto/contact.dto";
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Controller("crm")
 export class CompaniesController {
-  constructor(private readonly crmService: CrmService) {}
+  constructor(@Inject(CrmService) private readonly crmService: CrmService) {}
 
   @Get("companies")
   @Roles(

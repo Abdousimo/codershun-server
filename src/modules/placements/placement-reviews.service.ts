@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -25,7 +26,7 @@ import { CreateCheckInDto } from "./dto/check-in.dto";
 export class PlacementReviewsService {
   private readonly logger = new Logger(PlacementReviewsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   /**
    * Record Keep or Replace decision at end of trial (FR-PLC-01, FR-PLC-02, FR-PLC-03).

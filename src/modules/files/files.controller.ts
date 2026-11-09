@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -51,7 +52,7 @@ export interface UploadedMulterFile {
 @ApiTags("Files")
 @Controller("files")
 export class FilesController {
-  constructor(private readonly filesService: FilesService) {}
+  constructor(@Inject(FilesService) private readonly filesService: FilesService) {}
 
   @ApiBearerAuth()
   @UseGuards(AccessTokenGuard, RolesGuard)
@@ -136,7 +137,7 @@ export class FilesController {
 @Roles(UserRole.super_admin)
 @Controller("admin/files")
 export class AdminFilesController {
-  constructor(private readonly filesService: FilesService) {}
+  constructor(@Inject(FilesService) private readonly filesService: FilesService) {}
 
   @Patch(":id/virus-scan")
   @ApiOperation({ summary: "Update virus scan status (Super Admin)" })

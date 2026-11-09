@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, ServiceUnavailableException } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Inject, ServiceUnavailableException } from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
 import { Public } from "../../common/decorators/public.decorator";
@@ -7,7 +7,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 @ApiTags("Health")
 @Controller("health")
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   @Public()
   @Get()

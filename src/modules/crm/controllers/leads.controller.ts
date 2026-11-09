@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -29,7 +30,7 @@ import {
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Controller("crm/leads")
 export class LeadsController {
-  constructor(private readonly crmService: CrmService) {}
+  constructor(@Inject(CrmService) private readonly crmService: CrmService) {}
 
   @Get()
   @Roles(

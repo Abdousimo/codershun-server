@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import {
   CefrLevel,
   SeniorityLevel,
@@ -56,9 +56,9 @@ export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly settingsService: SettingsService,
-    private readonly pricingService: PricingService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(SettingsService) private readonly settingsService: SettingsService,
+    @Inject(PricingService) private readonly pricingService: PricingService,
   ) {}
 
   /**

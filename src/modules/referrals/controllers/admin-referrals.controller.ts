@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
 import { AccessTokenGuard } from "../../../common/guards/access-token.guard";
@@ -18,7 +18,7 @@ import { QueryReferralsDto } from "../dto/query-referrals.dto";
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Controller("admin/referrals")
 export class AdminReferralsController {
-  constructor(private readonly referralsService: ReferralsService) {}
+  constructor(@Inject(ReferralsService) private readonly referralsService: ReferralsService) {}
 
   @Get()
   @ApiOperation({ summary: "List referrals and reward statuses" })

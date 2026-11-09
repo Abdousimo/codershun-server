@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -26,7 +27,7 @@ import { QueryTalentRequestsDto } from "../dto/query-talent-requests.dto";
 @Roles(UserRole.client_admin, UserRole.client_user)
 @Controller("client/talent-requests")
 export class ClientTalentRequestsController {
-  constructor(private readonly talentRequestsService: TalentRequestsService) {}
+  constructor(@Inject(TalentRequestsService) private readonly talentRequestsService: TalentRequestsService) {}
 
   @Get()
   @ApiOperation({ summary: "List own company's talent requests" })

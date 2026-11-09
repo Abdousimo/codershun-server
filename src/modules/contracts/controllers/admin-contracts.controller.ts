@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
@@ -21,7 +21,7 @@ import type { UploadedMulterFile } from "../../files/files.controller";
 @Roles(UserRole.super_admin, UserRole.finance, UserRole.sales, UserRole.recruiter, UserRole.recruiter_lead, UserRole.account_manager)
 @Controller("admin/contracts")
 export class AdminContractsController {
-  constructor(private readonly contractsService: ContractsService) {}
+  constructor(@Inject(ContractsService) private readonly contractsService: ContractsService) {}
 
   @Get()
   @ApiOperation({ summary: "List contracts" })

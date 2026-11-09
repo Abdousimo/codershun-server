@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -34,10 +35,10 @@ export class PlacementsService {
   private readonly logger = new Logger(PlacementsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly pricingService: PricingService,
-    private readonly settingsService: SettingsService,
-    private readonly onboardingService: PlacementOnboardingService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PricingService) private readonly pricingService: PricingService,
+    @Inject(SettingsService) private readonly settingsService: SettingsService,
+    @Inject(PlacementOnboardingService) private readonly onboardingService: PlacementOnboardingService,
   ) {}
 
   /**

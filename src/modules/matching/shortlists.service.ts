@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -37,9 +38,9 @@ export class ShortlistsService {
   private readonly logger = new Logger(ShortlistsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly pricingService: PricingService,
-    private readonly matchingService: MatchingService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PricingService) private readonly pricingService: PricingService,
+    @Inject(MatchingService) private readonly matchingService: MatchingService,
   ) {}
 
   private hashToken(token: string): string {

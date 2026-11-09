@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, Inject, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AccessTokenGuard } from "../../../common/guards/access-token.guard";
 import { RolesGuard } from "../../../common/guards/roles.guard";
@@ -23,7 +23,7 @@ import { QueryStatusHistoryDto } from "../dto/query-status-history.dto";
 )
 @Controller("admin")
 export class AuditDashboardController {
-  constructor(private readonly service: AuditDashboardService) {}
+  constructor(@Inject(AuditDashboardService) private readonly service: AuditDashboardService) {}
 
   @Get("audit-log")
   @ApiOperation({ summary: "List audit log entries", description: "Read-only audit trail for money, status and configuration changes." })
