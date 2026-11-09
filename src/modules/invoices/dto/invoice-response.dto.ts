@@ -24,11 +24,21 @@ export class PaymentResponseDto {
   @ApiPropertyOptional() reference?: string | null;
 }
 
+export class InvoiceReminderResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() invoiceId!: string;
+  @ApiProperty() stage!: string;
+  @ApiProperty() sentAt!: string;
+}
+
 export class InvoiceResponseDto {
   @ApiProperty() id!: string;
   @ApiProperty({ enum: InvoiceKind }) kind!: InvoiceKind;
   @ApiProperty() companyId!: string;
+  @ApiPropertyOptional() companyName?: string | null;
+  @ApiPropertyOptional() companyBillingEmail?: string | null;
   @ApiProperty() legalEntityId!: string;
+  @ApiPropertyOptional() legalEntityName?: string | null;
   @ApiPropertyOptional() number?: string | null;
   @ApiProperty({ enum: InvoiceStatus }) status!: InvoiceStatus;
   @ApiProperty({ enum: UiLanguage }) language!: UiLanguage;
@@ -42,6 +52,12 @@ export class InvoiceResponseDto {
   @ApiProperty() balanceDue!: string;
   @ApiPropertyOptional() issueDate?: string | null;
   @ApiPropertyOptional() dueDate?: string | null;
+  @ApiPropertyOptional() sentAt?: string | null;
+  @ApiPropertyOptional() periodStart?: string | null;
+  @ApiPropertyOptional() periodEnd?: string | null;
+  @ApiPropertyOptional() notes?: string | null;
+  @ApiPropertyOptional() billingSnapshot?: any;
+  @ApiPropertyOptional() bankSnapshot?: any;
   @ApiPropertyOptional() pdfFileId?: string | null;
   @ApiProperty({ type: [InvoiceLineResponseDto] }) lines!: InvoiceLineResponseDto[];
   @ApiProperty({ type: [PaymentResponseDto] }) payments!: PaymentResponseDto[];

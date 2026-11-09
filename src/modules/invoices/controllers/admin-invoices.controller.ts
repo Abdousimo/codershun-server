@@ -76,4 +76,35 @@ export class AdminInvoicesController {
   uploadPdf(@Param("id", ParseUUIDPipe) id: string, @UploadedFile() file: UploadedMulterFile, @CurrentUser() user: AuthenticatedUser) {
     return this.invoicesService.attachPdf(id, file, user);
   }
+
+  @Post(":id/send")
+  @Roles(UserRole.super_admin, UserRole.finance)
+  @ApiOperation({ summary: "Send invoice by email to client billing contact" })
+  sendEmail(@Param("id", ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.sendInvoiceEmail(id, user);
+  }
+
+  @Post(":id/remind")
+  @Roles(UserRole.super_admin, UserRole.finance)
+  @ApiOperation({ summary: "Send overdue payment reminder email for this invoice" })
+  sendReminder(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body("stage") stage: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.invoicesService.sendInvoiceReminder(id, stage, user);
+  }
+
+  @Post("reminders/process")
+  @Roles(UserRole.super_admin, UserRole.finance)
+  @ApiOperation({ summary: "Automated batch processing for overdue invoice reminders" })
+  processReminders(@CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.processAutomatedReminders(user);
+  }
+
+  @Get(":id/reminders")
+  @ApiOperation({ summary: "Get all sent reminders for an invoice" })
+  getReminders(@Param("id", ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.getInvoiceReminders(id, user);
+  }
 }
