@@ -10,6 +10,7 @@ import {
   VettingStage,
 } from "../src/generated/prisma/client";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { ensureDatabaseViews } from "../scripts/ensure-views";
 
 const databaseUrl = process.env.DATABASE_URL?.trim();
 if (!databaseUrl) {
@@ -20,6 +21,7 @@ const adapter = new PrismaPg({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  await ensureDatabaseViews();
   console.log("Seeding database with standard reference data and test accounts...");
 
   // 1. Currencies

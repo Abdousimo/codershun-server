@@ -11,6 +11,7 @@
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config test/jest-e2e.cjs",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:views": "tsx scripts/ensure-views.ts",
     "db:test:reset": "tsx scripts/test-db-reset.ts"
   },
   "dependencies": {
