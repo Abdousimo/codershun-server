@@ -11,3 +11,4 @@ export class RejectTimesheetDto {
   @MinLength(5)
   reason!: string;
 }
+
