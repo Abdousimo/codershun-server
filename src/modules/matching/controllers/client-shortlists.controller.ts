@@ -21,10 +21,16 @@ import { ShortlistClientDecisionDto } from "../dto/client-decision.dto";
 @ApiTags("Client / Shortlists")
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(UserRole.client_admin, UserRole.client_user)
+@Roles(UserRole.client_admin, UserRole.client_user, UserRole.super_admin)
 @Controller("client/shortlists")
 export class ClientShortlistsController {
   constructor(@Inject(ShortlistsService) private readonly shortlistsService: ShortlistsService) {}
+
+  @Get()
+  @ApiOperation({ summary: "List published candidate shortlists for own company" })
+  async findAll(@CurrentUser() currentUser: AuthenticatedUser) {
+    return this.shortlistsService.findClientShortlists(currentUser);
+  }
 
   @Get(":id")
   @ApiOperation({ summary: "View published shortlist for own company (FR-SEC-01 strictly anonymised)" })

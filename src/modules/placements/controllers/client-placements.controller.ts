@@ -26,7 +26,7 @@ import { QueryPlacementsDto } from "../dto/query-placements.dto";
 @ApiTags("Client / Placements")
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(UserRole.client_admin, UserRole.client_user)
+@Roles(UserRole.client_admin, UserRole.client_user, UserRole.super_admin)
 @Controller("client/placements")
 export class ClientPlacementsController {
   constructor(

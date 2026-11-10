@@ -426,6 +426,73 @@ export class ShortlistsService {
   }
 
   /**
+   * List published shortlists for Client Portal.
+   */
+  async findClientShortlists(currentUser: AuthenticatedUser) {
+    let companyId = currentUser.companyId;
+    if (!companyId && currentUser.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true },
+      });
+      companyId = cu?.companyId;
+    }
+    if (!companyId && currentUser.role === UserRole.super_admin) {
+      const firstComp = await this.prisma.companies.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      companyId = firstComp?.id;
+    }
+    if (!companyId) {
+      throw new ForbiddenException("No client company profile associated with this account");
+    }
+
+    const requests = await this.prisma.talentRequests.findMany({
+      where: { companyId },
+      select: { id: true, roleTitle: true, seniority: true },
+    });
+    const requestIds = requests.map((r) => r.id);
+
+    const shortlists = await this.prisma.shortlists.findMany({
+      where: {
+        requestId: { in: requestIds },
+        status: ShortlistStatus.published,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const shortlistIds = shortlists.map((s) => s.id);
+    const items = shortlistIds.length > 0
+      ? await this.prisma.shortlistItems.findMany({
+          where: { shortlistId: { in: shortlistIds } },
+        })
+      : [];
+
+    const itemsCountMap = new Map<string, number>();
+    for (const it of items) {
+      itemsCountMap.set(it.shortlistId, (itemsCountMap.get(it.shortlistId) || 0) + 1);
+    }
+
+    const requestMap = new Map(requests.map((r) => [r.id, r]));
+
+    return shortlists.map((s) => {
+      const req = requestMap.get(s.requestId);
+      return {
+        id: s.id,
+        requestId: s.requestId,
+        roleTitle: req?.roleTitle || "Software Engineer",
+        seniority: req?.seniority || "Senior",
+        version: s.version,
+        status: s.status,
+        candidatesCount: itemsCountMap.get(s.id) || 0,
+        publishedAt: s.publishedAt ? s.publishedAt.toISOString() : null,
+        createdAt: s.createdAt.toISOString(),
+      };
+    });
+  }
+
+  /**
    * Find shortlist by ID for Client Portal (FR-SEC-01 strictly anonymised).
    * Strips real name, email, phone, agreed pay, and margin!
    */
@@ -450,7 +517,15 @@ export class ShortlistsService {
     }
 
     // Client scope enforcement
-    if (request.companyId !== currentUser.companyId) {
+    let companyId = currentUser.companyId;
+    if (!companyId && currentUser.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true },
+      });
+      companyId = cu?.companyId;
+    }
+    if (currentUser.role !== UserRole.super_admin && request.companyId !== companyId) {
       throw new ForbiddenException("Access to this shortlist is denied");
     }
 
@@ -511,7 +586,15 @@ export class ShortlistsService {
     }
 
     // Scope check: must belong to client company
-    if (request.companyId !== currentUser.companyId) {
+    let companyId = currentUser.companyId;
+    if (!companyId && currentUser.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true },
+      });
+      companyId = cu?.companyId;
+    }
+    if (currentUser.role !== UserRole.super_admin && request.companyId !== companyId) {
       throw new ForbiddenException("Access to this shortlist is denied");
     }
 

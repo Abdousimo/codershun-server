@@ -24,7 +24,7 @@ import { QueryTalentRequestsDto } from "../dto/query-talent-requests.dto";
 @ApiTags("Client / Talent Requests")
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(UserRole.client_admin, UserRole.client_user)
+@Roles(UserRole.client_admin, UserRole.client_user, UserRole.super_admin)
 @Controller("client/talent-requests")
 export class ClientTalentRequestsController {
   constructor(@Inject(TalentRequestsService) private readonly talentRequestsService: TalentRequestsService) {}
