@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 
 import {
   Prisma,
@@ -29,16 +23,8 @@ import {
   UpdateTalentStageDto,
 } from "./dto/talent-profile.dto";
 import { CreateScorecardDto } from "./dto/scorecard.dto";
-import {
-  CreateCertificationDto,
-  CreateEducationDto,
-  CreateExperienceDto,
-  CreatePortfolioDto,
-} from "./dto/experience-education.dto";
-import {
-  TalentAdminResponseDto,
-  TalentShowcaseResponseDto,
-} from "./dto/talent-response.dto";
+import { CreateCertificationDto, CreateEducationDto, CreateExperienceDto, CreatePortfolioDto } from "./dto/experience-education.dto";
+import { TalentAdminResponseDto, TalentShowcaseResponseDto } from "./dto/talent-response.dto";
 
 @Injectable()
 export class TalentsService {
@@ -130,18 +116,17 @@ export class TalentsService {
       throw new NotFoundException(`Talent ${id} not found`);
     }
 
-    const [skills, languages, experiences, educations, certifications, portfolio, references, documents, vettingSteps] =
-      await Promise.all([
-        this.prisma.talentSkills.findMany({ where: { talentId: id } }),
-        this.prisma.talentLanguages.findMany({ where: { talentId: id } }),
-        this.prisma.talentExperiences.findMany({ where: { talentId: id }, orderBy: { startDate: "desc" } }),
-        this.prisma.talentEducations.findMany({ where: { talentId: id } }),
-        this.prisma.talentCertifications.findMany({ where: { talentId: id } }),
-        this.prisma.talentPortfolioItems.findMany({ where: { talentId: id } }),
-        this.prisma.talentReferences.findMany({ where: { talentId: id } }),
-        this.prisma.talentDocuments.findMany({ where: { talentId: id } }),
-        this.prisma.vettingSteps.findMany({ where: { talentId: id }, orderBy: { createdAt: "asc" } }),
-      ]);
+    const [skills, languages, experiences, educations, certifications, portfolio, references, documents, vettingSteps] = await Promise.all([
+      this.prisma.talentSkills.findMany({ where: { talentId: id } }),
+      this.prisma.talentLanguages.findMany({ where: { talentId: id } }),
+      this.prisma.talentExperiences.findMany({ where: { talentId: id }, orderBy: { startDate: "desc" } }),
+      this.prisma.talentEducations.findMany({ where: { talentId: id } }),
+      this.prisma.talentCertifications.findMany({ where: { talentId: id } }),
+      this.prisma.talentPortfolioItems.findMany({ where: { talentId: id } }),
+      this.prisma.talentReferences.findMany({ where: { talentId: id } }),
+      this.prisma.talentDocuments.findMany({ where: { talentId: id } }),
+      this.prisma.vettingSteps.findMany({ where: { talentId: id }, orderBy: { createdAt: "asc" } }),
+    ]);
 
     return {
       ...this.mapToAdminResponse(talent),
@@ -170,9 +155,7 @@ export class TalentsService {
         throw new BadRequestException("Candidate is blacklisted and cannot be registered");
       }
       if (existing.canReapplyAfter && new Date() < existing.canReapplyAfter) {
-        throw new BadRequestException(
-          `Candidate re-application waiting period active until ${existing.canReapplyAfter.toISOString().split("T")[0]}`,
-        );
+        throw new BadRequestException(`Candidate re-application waiting period active until ${existing.canReapplyAfter.toISOString().split("T")[0]}`);
       }
       throw new BadRequestException(`Candidate with email ${dto.email} already exists`);
     }
@@ -546,7 +529,7 @@ export class TalentsService {
       const tExps = experiences
         .filter((e) => e.talentId === t.id)
         .map((e) => ({
-          companyLabel: e.hideCompanyName ? (e.publicCompanyLabel || "Confidential Company") : e.companyName,
+          companyLabel: e.hideCompanyName ? e.publicCompanyLabel || "Confidential Company" : e.companyName,
           title: e.title,
           startDate: e.startDate.toISOString().split("T")[0],
           endDate: e.endDate ? e.endDate.toISOString().split("T")[0] : null,
@@ -754,32 +737,27 @@ export class TalentsService {
       {
         key: "screening",
         label: "CV & HR Screening",
-        completed: ([
-          VettingStage.hr_interview,
-          VettingStage.technical_test,
-          VettingStage.tech_interview,
-          VettingStage.references,
-          VettingStage.vetted,
-        ] as VettingStage[]).includes(talent.vettingStage),
+        completed: (
+          [
+            VettingStage.hr_interview,
+            VettingStage.technical_test,
+            VettingStage.tech_interview,
+            VettingStage.references,
+            VettingStage.vetted,
+          ] as VettingStage[]
+        ).includes(talent.vettingStage),
         current: talent.vettingStage === VettingStage.screening,
       },
       {
         key: "technical_test",
         label: "Technical Assessment",
-        completed: ([
-          VettingStage.tech_interview,
-          VettingStage.references,
-          VettingStage.vetted,
-        ] as VettingStage[]).includes(talent.vettingStage),
+        completed: ([VettingStage.tech_interview, VettingStage.references, VettingStage.vetted] as VettingStage[]).includes(talent.vettingStage),
         current: talent.vettingStage === VettingStage.technical_test,
       },
       {
         key: "tech_interview",
         label: "Technical Interview",
-        completed: ([
-          VettingStage.references,
-          VettingStage.vetted,
-        ] as VettingStage[]).includes(talent.vettingStage),
+        completed: ([VettingStage.references, VettingStage.vetted] as VettingStage[]).includes(talent.vettingStage),
         current: talent.vettingStage === VettingStage.tech_interview,
       },
       {
@@ -919,10 +897,7 @@ export class TalentsService {
           });
           if (comp?.name) companyName = comp.name;
         }
-        const durationMinutes =
-          inv.startsAt && inv.endsAt
-            ? Math.round((inv.endsAt.getTime() - inv.startsAt.getTime()) / (1000 * 60))
-            : 45;
+        const durationMinutes = inv.startsAt && inv.endsAt ? Math.round((inv.endsAt.getTime() - inv.startsAt.getTime()) / (1000 * 60)) : 45;
         return {
           id: inv.id,
           companyName,
@@ -932,7 +907,7 @@ export class TalentsService {
           durationMinutes,
           meetingUrl: inv.meetingLink,
         };
-      })
+      }),
     );
 
     return {
