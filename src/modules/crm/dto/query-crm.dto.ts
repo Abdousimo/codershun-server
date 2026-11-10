@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from "class-validator";
 
 import { CompanyStatus, LeadSource, LeadStage } from "../../../generated/prisma/client";
@@ -19,6 +19,12 @@ export class PaginationDto {
   @Min(1)
   @Max(100)
   pageSize: number = 25;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  limit?: number;
 
   @ApiPropertyOptional({ example: "createdAt:desc" })
   @IsOptional()
@@ -56,6 +62,7 @@ export class QueryLeadsDto extends PaginationDto {
 export class QueryCompaniesDto extends PaginationDto {
   @ApiPropertyOptional({ enum: CompanyStatus })
   @IsOptional()
+  @Transform(({ value }) => (value === "active" ? CompanyStatus.client : value))
   @IsEnum(CompanyStatus)
   status?: CompanyStatus;
 

@@ -48,12 +48,17 @@ export class CrmService {
 
   async getCompanies(query: QueryCompaniesDto) {
     const page = Math.max(1, query.page || 1);
-    const pageSize = Math.max(1, Math.min(100, query.pageSize || 25));
+    const pageSize = Math.max(1, Math.min(100, query.pageSize || query.limit || 25));
     const skip = (page - 1) * pageSize;
+
+    let statusFilter = query.status;
+    if ((statusFilter as any) === "active") {
+      statusFilter = CompanyStatus.client;
+    }
 
     const where: Prisma.CompaniesWhereInput = {
       deletedAt: null,
-      ...(query.status && { status: query.status }),
+      ...(statusFilter && { status: statusFilter }),
       ...(query.countryCode && { countryCode: query.countryCode.toUpperCase() }),
       ...(query.search && {
         OR: [

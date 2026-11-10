@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   IsBoolean,
   IsDateString,
@@ -230,6 +230,12 @@ export class UpdateTalentProfileDto {
 
 export class UpdateTalentStageDto {
   @ApiProperty({ enum: VettingStage, example: VettingStage.tech_interview })
+  @Transform(({ value }) => {
+    if (value === "screened" || value === "screening") return VettingStage.screening;
+    if (value === "vetting") return VettingStage.screening;
+    if (value === "placed") return VettingStage.vetted;
+    return value;
+  })
   @IsEnum(VettingStage)
   stage!: VettingStage;
 

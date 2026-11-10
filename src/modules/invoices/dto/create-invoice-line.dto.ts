@@ -1,9 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from "class-validator";
 import { InvoiceLineKind } from "../../../generated/prisma/client";
 
 export class CreateInvoiceLineDto {
   @ApiProperty({ enum: InvoiceLineKind })
+  @Transform(({ value }) => {
+    if (value === "placement_fee") return InvoiceLineKind.dedicated_fee;
+    if (value === "hourly" || value === "daily") return InvoiceLineKind.time_material;
+    return value;
+  })
   @IsEnum(InvoiceLineKind)
   kind!: InvoiceLineKind;
 

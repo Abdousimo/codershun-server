@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from "class-validator";
 
 import { SeniorityLevel, TalentStatus, VettingStage } from "../../../generated/prisma/client";
@@ -20,8 +20,20 @@ export class QueryTalentsDto {
   @Max(100)
   pageSize: number = 25;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  limit?: number;
+
   @ApiPropertyOptional({ enum: VettingStage })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === "screened" || value === "screening") return VettingStage.screening;
+    if (value === "vetting") return VettingStage.screening;
+    if (value === "placed") return VettingStage.vetted;
+    return value;
+  })
   @IsEnum(VettingStage)
   stage?: VettingStage;
 

@@ -52,12 +52,21 @@ export class TalentsService {
 
   async getTalents(query: QueryTalentsDto) {
     const page = Math.max(1, query.page || 1);
-    const pageSize = Math.max(1, Math.min(100, query.pageSize || 25));
+    const pageSize = Math.max(1, Math.min(100, query.pageSize || query.limit || 25));
     const skip = (page - 1) * pageSize;
+
+    let stageFilter = query.stage;
+    if ((stageFilter as any) === "screened" || (stageFilter as any) === "screening") {
+      stageFilter = VettingStage.screening;
+    } else if ((stageFilter as any) === "vetting") {
+      stageFilter = VettingStage.screening;
+    } else if ((stageFilter as any) === "placed") {
+      stageFilter = VettingStage.vetted;
+    }
 
     const where: Prisma.TalentsWhereInput = {
       deletedAt: null,
-      ...(query.stage && { vettingStage: query.stage }),
+      ...(stageFilter && { vettingStage: stageFilter }),
       ...(query.status && { status: query.status }),
       ...(query.seniority && { seniority: query.seniority }),
       ...(query.categoryId && { categoryId: query.categoryId }),
@@ -262,11 +271,19 @@ export class TalentsService {
   async changeTalentStage(id: string, dto: UpdateTalentStageDto, currentUser: AuthenticatedUser) {
     const talent = await this.getTalentById(id);
 
+    let stage = dto.stage;
+    if ((stage as any) === "screened" || (stage as any) === "vetting") {
+      stage = VettingStage.screening;
+    } else if ((stage as any) === "placed") {
+      stage = VettingStage.vetted;
+    }
+
     return this.prisma.withUserContext(currentUser, async (tx) => {
       const updated = await tx.talents.update({
         where: { id },
         data: {
-          vettingStage: dto.stage,
+          vettingStage: stage,
+          ...((dto.stage as any) === "placed" && { status: TalentStatus.placed }),
           updatedAt: new Date(),
         },
       });
@@ -280,7 +297,7 @@ export class TalentsService {
         [VettingStage.references]: VettingStepType.reference_check,
       };
 
-      const stepType = stepTypeMap[dto.stage];
+      const stepType = stepTypeMap[stage];
       if (stepType) {
         const existingStep = await tx.vettingSteps.findFirst({
           where: { talentId: id, type: stepType },

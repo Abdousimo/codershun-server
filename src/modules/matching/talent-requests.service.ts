@@ -359,8 +359,8 @@ export class TalentRequestsService {
    * List talent requests with filters and pagination.
    */
   async findAll(query: QueryTalentRequestsDto, currentUser: AuthenticatedUser) {
-    const page = query.page ?? 1;
-    const pageSize = query.pageSize ?? 25;
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.max(1, Math.min(100, Number(query.pageSize) || Number(query.limit) || 25));
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.TalentRequestsWhereInput = {};

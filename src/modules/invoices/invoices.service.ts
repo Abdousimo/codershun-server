@@ -118,14 +118,16 @@ export class InvoicesService {
     if (query.status) where.status = query.status;
     if (query.kind) where.kind = query.kind;
     if (query.search) where.number = { contains: query.search, mode: Prisma.QueryMode.insensitive };
-    const skip = (query.page - 1) * query.pageSize;
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.max(1, Math.min(100, Number(query.pageSize) || Number(query.limit) || 25));
+    const skip = (page - 1) * pageSize;
     const [total, invoices] = await Promise.all([
       this.prisma.invoices.count({ where }),
-      this.prisma.invoices.findMany({ where, skip, take: query.pageSize, orderBy: { createdAt: "desc" } }),
+      this.prisma.invoices.findMany({ where, skip, take: pageSize, orderBy: { createdAt: "desc" } }),
     ]);
     return {
       data: await Promise.all(invoices.map((invoice) => this.mapResponse(invoice))),
-      meta: { page: query.page, pageSize: query.pageSize, total },
+      meta: { page, pageSize, total },
     };
   }
 
@@ -183,6 +185,12 @@ export class InvoicesService {
     this.assertFinance(user);
     const invoice = await this.getRaw(id);
     this.assertDraft(invoice.status);
+    let kind = dto.kind;
+    if ((kind as any) === "placement_fee") {
+      kind = InvoiceLineKind.dedicated_fee;
+    } else if ((kind as any) === "hourly" || (kind as any) === "daily") {
+      kind = InvoiceLineKind.time_material;
+    }
     const quantity = new Prisma.Decimal(dto.quantity);
     const unitPrice = new Prisma.Decimal(dto.unitPrice);
     const discountPct = new Prisma.Decimal(dto.discountPct ?? 0);
@@ -193,7 +201,7 @@ export class InvoicesService {
           invoiceId: id,
           placementId: dto.placementId,
           timesheetId: dto.timesheetId,
-          kind: dto.kind,
+          kind,
           description: dto.description,
           periodStart: dto.periodStart ? new Date(dto.periodStart) : null,
           periodEnd: dto.periodEnd ? new Date(dto.periodEnd) : null,

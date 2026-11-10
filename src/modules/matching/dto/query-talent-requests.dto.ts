@@ -19,6 +19,12 @@ export class QueryTalentRequestsDto {
   @IsOptional()
   pageSize?: number = 25;
 
+  @ApiPropertyOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  limit?: number;
+
   @ApiPropertyOptional({ description: "Search by role title, company name, or description" })
   @IsString()
   @IsOptional()

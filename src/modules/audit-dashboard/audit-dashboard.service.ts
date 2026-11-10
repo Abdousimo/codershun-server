@@ -87,20 +87,41 @@ export class AuditDashboardService {
       margin_amount?: Prisma.Decimal | string | null;
       contribution_margin?: Prisma.Decimal | string | null;
     };
-    const [mrr, invoiceAging, placementEconomics, payoutsDue] = await Promise.all([
+    const [
+      mrr,
+      invoiceAging,
+      placementEconomics,
+      payoutsDue,
+      openRequests,
+      activePlacementsCount,
+      trialPlacements,
+      riskFlags,
+    ] = await Promise.all([
       this.prisma.$queryRaw<MrrRow[]>(Prisma.sql`SELECT * FROM v_kpi_mrr`),
       this.prisma.$queryRaw<AgingRow[]>(Prisma.sql`SELECT * FROM v_invoice_aging ORDER BY days_overdue DESC`),
       this.prisma.$queryRaw<EconomicsRow[]>(Prisma.sql`SELECT * FROM v_placement_economics`),
       this.prisma.payouts.count({ where: { status: { in: ["pending", "approved"] } } }),
+      this.prisma.talentRequests.count({
+        where: { status: { in: ["open", "sourcing", "shortlist_sent", "interviewing", "proposal_sent"] } },
+      }),
+      this.prisma.placements.count({ where: { status: "active" } }),
+      this.prisma.placements.count({ where: { status: "in_trial" } }),
+      this.prisma.riskFlags.count({ where: { resolvedAt: null } }),
     ]);
     const decimal = (value: Prisma.Decimal | string | null | undefined) =>
       new Prisma.Decimal(value ?? 0).toFixed(2);
+    const mrrActivePlacements = mrr.reduce((sum, row) => sum + Number(row.active_placements), 0);
     return {
       mrr,
       invoiceAging,
       placementEconomics,
+      payoutsDue,
+      openRequests,
+      activePlacements: mrrActivePlacements > 0 ? mrrActivePlacements : activePlacementsCount,
+      trialPlacements,
+      riskFlags,
       summary: {
-        activePlacements: mrr.reduce((sum, row) => sum + Number(row.active_placements), 0),
+        activePlacements: mrrActivePlacements > 0 ? mrrActivePlacements : activePlacementsCount,
         mrr: mrr.reduce((sum, row) => sum.plus(row.mrr ?? 0), new Prisma.Decimal(0)).toFixed(2),
         monthlyGrossMargin: mrr
           .reduce((sum, row) => sum.plus(row.monthly_gross_margin ?? 0), new Prisma.Decimal(0))
@@ -110,6 +131,9 @@ export class AuditDashboardService {
           .toFixed(2),
         overdueInvoices: invoiceAging.filter((row) => row.days_overdue > 0).length,
         payoutsDue,
+        openRequests,
+        trialPlacements,
+        riskFlags,
       },
     };
   }

@@ -94,12 +94,14 @@ export class ContractsService {
     if (query.type) where.type = query.type;
     if (query.signatureStatus) where.signatureStatus = query.signatureStatus;
     if (query.search) where.title = { contains: query.search, mode: Prisma.QueryMode.insensitive };
-    const skip = (query.page - 1) * query.pageSize;
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.max(1, Math.min(100, Number(query.pageSize) || Number(query.limit) || 25));
+    const skip = (page - 1) * pageSize;
     const [total, contracts] = await Promise.all([
       this.prisma.contracts.count({ where }),
-      this.prisma.contracts.findMany({ where, skip, take: query.pageSize, orderBy: { createdAt: "desc" } }),
+      this.prisma.contracts.findMany({ where, skip, take: pageSize, orderBy: { createdAt: "desc" } }),
     ]);
-    return { data: await Promise.all(contracts.map((contract) => this.mapResponse(contract))), meta: { page: query.page, pageSize: query.pageSize, total } };
+    return { data: await Promise.all(contracts.map((contract) => this.mapResponse(contract))), meta: { page, pageSize, total } };
   }
 
   async findById(id: string, user: AuthenticatedUser): Promise<ContractResponseDto> {

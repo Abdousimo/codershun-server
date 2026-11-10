@@ -19,6 +19,12 @@ export class QueryInvoicesDto {
   @IsOptional()
   pageSize = 25;
 
+  @ApiPropertyOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  limit?: number;
+
   @ApiPropertyOptional({ enum: InvoiceStatus })
   @IsEnum(InvoiceStatus)
   @IsOptional()

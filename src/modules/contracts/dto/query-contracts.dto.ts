@@ -19,6 +19,12 @@ export class QueryContractsDto {
   @IsOptional()
   pageSize = 25;
 
+  @ApiPropertyOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  limit?: number;
+
   @ApiPropertyOptional({ enum: ContractType })
   @IsEnum(ContractType)
   @IsOptional()
