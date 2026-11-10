@@ -75,3 +75,4 @@ export class InviteClientWorkspaceMemberDto {
   @IsBoolean()
   canViewInvoices?: boolean;
 }
+
