@@ -11,6 +11,7 @@ import {
   Recommendation,
   SeniorityLevel,
   TalentStatus,
+  UserRole,
   VettingStage,
   VettingStepStatus,
   VettingStepType,
@@ -673,6 +674,273 @@ export class TalentsService {
       publicDisplayName: talent.publicDisplayName,
       createdAt: talent.createdAt.toISOString(),
       updatedAt: talent.updatedAt.toISOString(),
+    };
+  }
+
+  // ==========================================
+  // TALENT PORTAL DASHBOARD (CONFIDENTIAL & ROLE-SAFE)
+  // ==========================================
+
+  async getTalentDashboard(user: AuthenticatedUser) {
+    let talent = null;
+
+    if (user.talentId) {
+      talent = await this.prisma.talents.findUnique({
+        where: { id: user.talentId },
+      });
+    }
+
+    if (!talent && user.id) {
+      talent = await this.prisma.talents.findFirst({
+        where: { userId: user.id },
+      });
+    }
+
+    // For staff preview or newly registered accounts without a linked talent row
+    if (!talent) {
+      if (user.role === UserRole.talent) {
+        const names = (user.email.split("@")[0] || "Candidate").split(".");
+        talent = await this.prisma.talents.create({
+          data: {
+            userId: user.id,
+            email: user.email,
+            firstName: names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : "Candidate",
+            lastName: names[1] ? names[1].charAt(0).toUpperCase() + names[1].slice(1) : "Talent",
+            status: TalentStatus.in_vetting,
+            vettingStage: VettingStage.applied,
+            countryCode: "DZ",
+            profileCompleteness: 35,
+          },
+        });
+      } else {
+        talent = await this.prisma.talents.findFirst({
+          where: { deletedAt: null },
+          orderBy: { createdAt: "desc" },
+        });
+      }
+    }
+
+    if (!talent) {
+      throw new NotFoundException("Talent profile not found");
+    }
+
+    const talentId = talent.id;
+
+    // 1. Vetting Steps & Stage Progress
+    const vettingSteps = await this.prisma.vettingSteps.findMany({
+      where: { talentId },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const pipelineStages = [
+      { key: "applied", label: "Applied", completed: true },
+      {
+        key: "screening",
+        label: "CV & HR Screening",
+        completed: ([
+          VettingStage.hr_interview,
+          VettingStage.technical_test,
+          VettingStage.tech_interview,
+          VettingStage.references,
+          VettingStage.vetted,
+        ] as VettingStage[]).includes(talent.vettingStage),
+        current: talent.vettingStage === VettingStage.screening,
+      },
+      {
+        key: "technical_test",
+        label: "Technical Assessment",
+        completed: ([
+          VettingStage.tech_interview,
+          VettingStage.references,
+          VettingStage.vetted,
+        ] as VettingStage[]).includes(talent.vettingStage),
+        current: talent.vettingStage === VettingStage.technical_test,
+      },
+      {
+        key: "tech_interview",
+        label: "Technical Interview",
+        completed: ([
+          VettingStage.references,
+          VettingStage.vetted,
+        ] as VettingStage[]).includes(talent.vettingStage),
+        current: talent.vettingStage === VettingStage.tech_interview,
+      },
+      {
+        key: "vetted",
+        label: "Vetted & Ready",
+        completed: talent.vettingStage === VettingStage.vetted,
+        current: talent.vettingStage === VettingStage.vetted,
+      },
+    ];
+
+    // 2. Active Placement (Confidential: Strictly hides client price & margin - FR-SEC-02)
+    const activePlacementRecord = await this.prisma.placements.findFirst({
+      where: {
+        talentId,
+        status: { in: ["in_trial", "active", "notice"] },
+      },
+      orderBy: { startDate: "desc" },
+    });
+
+    let activePlacement: any = null;
+    if (activePlacementRecord) {
+      const [company, jobRole] = await Promise.all([
+        this.prisma.companies.findUnique({
+          where: { id: activePlacementRecord.companyId },
+          select: { name: true, industry: true },
+        }),
+        activePlacementRecord.jobRoleId
+          ? this.prisma.jobRoles.findUnique({
+              where: { id: activePlacementRecord.jobRoleId },
+              select: { nameEn: true, nameFr: true },
+            })
+          : null,
+      ]);
+
+      const now = new Date();
+      let trialDay = 0;
+      if (activePlacementRecord.status === "in_trial" && activePlacementRecord.startDate) {
+        const diffMs = now.getTime() - new Date(activePlacementRecord.startDate).getTime();
+        trialDay = Math.max(1, Math.min(10, Math.ceil(diffMs / (1000 * 60 * 60 * 24))));
+      }
+
+      activePlacement = {
+        id: activePlacementRecord.id,
+        reference: activePlacementRecord.reference,
+        clientName: company?.name ?? "Client Partner",
+        industry: company?.industry ?? "Technology",
+        roleName: jobRole?.nameEn ?? "Software Engineer",
+        engagementModel: activePlacementRecord.engagementModel,
+        status: activePlacementRecord.status,
+        startDate: activePlacementRecord.startDate ? activePlacementRecord.startDate.toISOString().split("T")[0] : null,
+        trialEndDate: activePlacementRecord.trialEndDate ? activePlacementRecord.trialEndDate.toISOString().split("T")[0] : null,
+        trialDay,
+        timeSharePct: activePlacementRecord.timeSharePct,
+        monthlyPay: activePlacementRecord.talentPay ? activePlacementRecord.talentPay.toString() : "0.00",
+        dailyPay: activePlacementRecord.talentDailyPay ? activePlacementRecord.talentDailyPay.toString() : null,
+        currency: activePlacementRecord.currency,
+        paidLeaveDaysPerMonth: activePlacementRecord.paidLeaveDaysPerMonth ?? 1.5,
+      };
+    }
+
+    // 3. Current Month Timesheet
+    const currentDate = new Date();
+    const currentMonthStart = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), 1));
+    let timesheetSummary = {
+      month: currentMonthStart.toISOString().split("T")[0],
+      monthName: currentDate.toLocaleString("default", { month: "long", year: "numeric" }),
+      status: "none",
+      daysLogged: 0,
+      totalWorkingDays: 22,
+      submissionDeadline: new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth() + 1, 1)).toISOString().split("T")[0],
+    };
+
+    if (activePlacementRecord) {
+      const timesheet = await this.prisma.timesheets.findFirst({
+        where: {
+          placementId: activePlacementRecord.id,
+          month: currentMonthStart,
+        },
+      });
+
+      if (timesheet) {
+        const entriesCount = await this.prisma.timesheetEntries.count({
+          where: { timesheetId: timesheet.id },
+        });
+        timesheetSummary = {
+          month: currentMonthStart.toISOString().split("T")[0],
+          monthName: currentDate.toLocaleString("default", { month: "long", year: "numeric" }),
+          status: timesheet.status,
+          daysLogged: entriesCount,
+          totalWorkingDays: 22,
+          submissionDeadline: new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth() + 1, 1)).toISOString().split("T")[0],
+        };
+      }
+    }
+
+    // 4. Payouts Summary
+    const [pendingPayout, latestPaidPayout] = await Promise.all([
+      this.prisma.payouts.findFirst({
+        where: { talentId, status: { in: ["pending", "approved"] } },
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.payouts.findFirst({
+        where: { talentId, status: "paid" },
+        orderBy: { paidAt: "desc" },
+      }),
+    ]);
+
+    const nextPayoutDate = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth() + (currentDate.getUTCDate() > 5 ? 1 : 0), 5));
+
+    const payoutSummary = {
+      pendingAmount: pendingPayout?.netAmount ? pendingPayout.netAmount.toString() : (activePlacement?.monthlyPay ?? "0.00"),
+      pendingStatus: pendingPayout?.status ?? "estimated",
+      currency: pendingPayout?.currency ?? talent.payCurrency ?? "EUR",
+      estimatedPayoutDate: nextPayoutDate.toISOString().split("T")[0],
+      lastPaidAmount: latestPaidPayout?.netAmount ? latestPaidPayout.netAmount.toString() : null,
+      lastPaidDate: latestPaidPayout?.paidAt ? latestPaidPayout.paidAt.toISOString().split("T")[0] : null,
+    };
+
+    // 5. Upcoming Interviews
+    const interviews = await this.prisma.interviews.findMany({
+      where: {
+        talentId,
+        startsAt: { gte: new Date() },
+        status: { in: ["proposed", "scheduled"] },
+      },
+      orderBy: { startsAt: "asc" },
+      take: 3,
+    });
+
+    const upcomingInterviews = await Promise.all(
+      interviews.map(async (inv) => {
+        let companyName = "Partner Company";
+        if (inv.companyId) {
+          const comp = await this.prisma.companies.findUnique({
+            where: { id: inv.companyId },
+            select: { name: true },
+          });
+          if (comp?.name) companyName = comp.name;
+        }
+        const durationMinutes =
+          inv.startsAt && inv.endsAt
+            ? Math.round((inv.endsAt.getTime() - inv.startsAt.getTime()) / (1000 * 60))
+            : 45;
+        return {
+          id: inv.id,
+          companyName,
+          title: `Round ${inv.round} - Client Interview`,
+          status: inv.status,
+          startsAt: inv.startsAt ? inv.startsAt.toISOString() : null,
+          durationMinutes,
+          meetingUrl: inv.meetingLink,
+        };
+      })
+    );
+
+    return {
+      talent: {
+        id: talent.id,
+        firstName: talent.firstName,
+        lastName: talent.lastName,
+        email: talent.email,
+        headline: talent.headline,
+        seniority: talent.seniority,
+        vettingStage: talent.vettingStage,
+        vettingScore: talent.vettingScore ? talent.vettingScore.toString() : null,
+        status: talent.status,
+        availabilityDate: talent.availabilityDate ? talent.availabilityDate.toISOString().split("T")[0] : null,
+        timeSharePct: talent.timeSharePct,
+        profileCompleteness: talent.profileCompleteness || 60,
+        agreedPay: talent.agreedPay ? talent.agreedPay.toString() : null,
+        payCurrency: talent.payCurrency || "EUR",
+      },
+      pipelineStages,
+      vettingSteps,
+      activePlacement,
+      timesheetSummary,
+      payoutSummary,
+      upcomingInterviews,
     };
   }
 }
