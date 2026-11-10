@@ -25,3 +25,4 @@ export class TalentDashboardController {
     return this.talentsService.getTalentDashboard(currentUser);
   }
 }
+
