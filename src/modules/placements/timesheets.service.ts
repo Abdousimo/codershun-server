@@ -458,15 +458,37 @@ export class TimesheetsService {
       throw new NotFoundException("Timesheet not found");
     }
 
-    const updated = await this.prisma.timesheets.update({
-      where: { id: timesheetId },
-      data: {
-        status: TimesheetStatus.approved,
-        approvedBy: currentUser.id,
-        approvedAt: new Date(),
-        rejectionComment: null,
-      },
-    });
+    if (currentUser.role !== UserRole.super_admin) {
+      let companyId = currentUser.companyId;
+      if (!companyId && currentUser.id && this.prisma.companyUsers?.findFirst) {
+        const cu = await this.prisma.companyUsers.findFirst({
+          where: { userId: currentUser.id },
+          select: { companyId: true },
+        });
+        companyId = cu?.companyId;
+      }
+
+      const placement = await this.prisma.placements.findUnique({
+        where: { id: timesheet.placementId },
+        select: { companyId: true },
+      });
+
+      if (!placement || placement.companyId !== companyId) {
+        throw new ForbiddenException("Access to this timesheet is denied");
+      }
+    }
+
+    const updated = await this.prisma.withUserContext(currentUser, async (tx) =>
+      tx.timesheets.update({
+        where: { id: timesheetId },
+        data: {
+          status: TimesheetStatus.approved,
+          approvedBy: currentUser.id,
+          approvedAt: new Date(),
+          rejectionComment: null,
+        },
+      }),
+    );
 
     return {
       id: updated.id,
@@ -488,15 +510,37 @@ export class TimesheetsService {
       throw new NotFoundException("Timesheet not found");
     }
 
-    const updated = await this.prisma.timesheets.update({
-      where: { id: timesheetId },
-      data: {
-        status: TimesheetStatus.rejected,
-        rejectedBy: currentUser.id,
-        rejectedAt: new Date(),
-        rejectionComment: reason.trim(),
-      },
-    });
+    if (currentUser.role !== UserRole.super_admin) {
+      let companyId = currentUser.companyId;
+      if (!companyId && currentUser.id && this.prisma.companyUsers?.findFirst) {
+        const cu = await this.prisma.companyUsers.findFirst({
+          where: { userId: currentUser.id },
+          select: { companyId: true },
+        });
+        companyId = cu?.companyId;
+      }
+
+      const placement = await this.prisma.placements.findUnique({
+        where: { id: timesheet.placementId },
+        select: { companyId: true },
+      });
+
+      if (!placement || placement.companyId !== companyId) {
+        throw new ForbiddenException("Access to this timesheet is denied");
+      }
+    }
+
+    const updated = await this.prisma.withUserContext(currentUser, async (tx) =>
+      tx.timesheets.update({
+        where: { id: timesheetId },
+        data: {
+          status: TimesheetStatus.rejected,
+          rejectedBy: currentUser.id,
+          rejectedAt: new Date(),
+          rejectionComment: reason.trim(),
+        },
+      }),
+    );
 
     return {
       id: updated.id,

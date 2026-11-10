@@ -15,6 +15,10 @@ import { Roles } from "../../../common/decorators/roles.decorator";
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "../../../common/types/authenticated-user";
 import { CrmService } from "../crm.service";
+import {
+  InviteClientWorkspaceMemberDto,
+  UpdateClientWorkspaceDto,
+} from "../dto/client-workspace.dto";
 
 @ApiTags("Client / Workspace")
 @ApiBearerAuth()
@@ -35,18 +39,10 @@ export class ClientWorkspaceController {
   @ApiOperation({ summary: "Update company profile and billing information" })
   @ApiResponse({ status: 200, description: "Updated company profile" })
   async updateWorkspace(
-    @Body()
-    body: {
-      name?: string;
-      billingEmail?: string;
-      taxId?: string;
-      billingAddress?: string;
-      website?: string;
-      phone?: string;
-    },
+    @Body() dto: UpdateClientWorkspaceDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return this.crmService.updateClientWorkspace(body, currentUser);
+    return this.crmService.updateClientWorkspace(dto, currentUser);
   }
 
   @Get("members")
@@ -60,17 +56,9 @@ export class ClientWorkspaceController {
   @ApiOperation({ summary: "Invite a colleague to company workspace" })
   @ApiResponse({ status: 201, description: "Member invited / created successfully" })
   async inviteMember(
-    @Body()
-    body: {
-      email: string;
-      firstName?: string;
-      lastName?: string;
-      isAdmin?: boolean;
-      canViewInvoices?: boolean;
-    },
+    @Body() dto: InviteClientWorkspaceMemberDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return this.crmService.inviteClientWorkspaceMember(body, currentUser);
+    return this.crmService.inviteClientWorkspaceMember(dto, currentUser);
   }
 }
-

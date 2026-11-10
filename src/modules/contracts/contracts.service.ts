@@ -378,7 +378,7 @@ export class ContractsService {
           signatories: signatories.map((s) => ({
             id: s.id,
             name: s.name,
-            email: s.email,
+            email: s.party === "talent" ? "talent@codershub.dz" : s.email,
             party: s.party,
             signedAt: s.signedAt?.toISOString() ?? null,
           })),

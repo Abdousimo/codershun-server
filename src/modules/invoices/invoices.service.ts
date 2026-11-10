@@ -131,12 +131,19 @@ export class InvoicesService {
     const invoice = await this.getRaw(id);
     if (!STAFF_ROLES.includes(user.role)) {
       let scopedCompanyId = user.companyId;
-      if (!scopedCompanyId && user.id && this.prisma.companyUsers?.findFirst) {
+      if (user.id && this.prisma.companyUsers?.findFirst) {
         const cu = await this.prisma.companyUsers.findFirst({
           where: { userId: user.id },
-          select: { companyId: true },
+          select: { companyId: true, canViewInvoices: true },
         });
-        scopedCompanyId = cu?.companyId;
+        if (cu) {
+          if (!cu.canViewInvoices && user.role !== UserRole.client_admin) {
+            throw new ForbiddenException("You do not have permission to view invoices");
+          }
+          if (!scopedCompanyId) {
+            scopedCompanyId = cu.companyId;
+          }
+        }
       }
 
       if (invoice.companyId !== scopedCompanyId) {

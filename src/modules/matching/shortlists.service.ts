@@ -780,10 +780,18 @@ export class ShortlistsService {
 
     const anonymisedItems: AnonymisedShortlistItemDto[] = items.map((item) => {
       const talent = talentMap.get(item.talentId);
+      const isUnmasked =
+        item.contactRevealedAt ||
+        item.clientDecision === ClientDecision.interview ||
+        item.clientDecision === ClientDecision.hire;
+      const displayName = isUnmasked && talent?.firstName
+        ? `${talent.firstName} ${talent.lastName || ""}`.trim()
+        : talent?.publicSlug || `talent-${item.talentId.slice(0, 8)}`;
+
       return {
         id: item.id,
         talentId: item.talentId,
-        publicSlug: talent?.publicSlug || `talent-${item.talentId.slice(0, 8)}`,
+        publicSlug: displayName,
         roleTitle: talent?.headline,
         seniority: talent?.seniority,
         experienceYears: talent?.yearsExperience ? Number(talent.yearsExperience) : null,

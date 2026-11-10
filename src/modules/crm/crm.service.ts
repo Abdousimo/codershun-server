@@ -783,24 +783,59 @@ export class CrmService {
         trialDevelopersCount: trialCount,
         openTalentRequestsCount: openRequestsCount,
         pendingTimesheetsCount,
+        pendingTimesheetReviewsCount: pendingTimesheetsCount,
         outstandingInvoicesAmount: outstandingTotal.toFixed(2),
         outstandingInvoicesCount: outstandingInvoices.length,
       },
       activeTeamPreview,
-      pendingTimesheets: pendingTimesheets.map((ts) => ({
-        id: ts.id,
-        periodMonth: ts.periodMonth,
-        totalDays: ts.totalDays ? new Prisma.Decimal(ts.totalDays).toFixed(1) : "0.0",
-        totalHours: ts.totalHours ? new Prisma.Decimal(ts.totalHours).toFixed(1) : "0.0",
-        submittedAt: ts.submittedAt ? ts.submittedAt.toISOString() : null,
-      })),
-      activeRequests: openRequests.map((req) => ({
-        id: req.id,
-        roleTitle: req.roleTitle,
-        seniority: req.seniority,
-        status: req.status,
-        createdAt: req.createdAt.toISOString(),
-      })),
+      pendingTimesheets: await Promise.all(
+        pendingTimesheets.map(async (ts) => {
+          const placement = activePlacements.find((p) => p.id === ts.placementId);
+          let talentName = placement?.reference ? `Engineer ${placement.reference}` : "Developer";
+          if (placement?.talentId) {
+            const tal = await this.prisma.talents.findUnique({
+              where: { id: placement.talentId },
+              select: { firstName: true },
+            });
+            if (tal?.firstName) talentName = tal.firstName;
+          }
+          let roleName = "Software Engineer";
+          if (placement?.jobRoleId) {
+            const jr = await this.prisma.jobRoles.findUnique({
+              where: { id: placement.jobRoleId },
+              select: { nameEn: true },
+            });
+            if (jr?.nameEn) roleName = jr.nameEn;
+          }
+          const daysLogged = ts.totalDays ? Number(new Prisma.Decimal(ts.totalDays).toFixed(1)) : 0;
+          return {
+            id: ts.id,
+            periodMonth: ts.periodMonth,
+            talentName,
+            roleName,
+            daysLogged,
+            totalDays: ts.totalDays ? new Prisma.Decimal(ts.totalDays).toFixed(1) : "0.0",
+            totalHours: ts.totalHours ? new Prisma.Decimal(ts.totalHours).toFixed(1) : "0.0",
+            submittedAt: ts.submittedAt ? ts.submittedAt.toISOString() : null,
+          };
+        }),
+      ),
+      activeRequests: await Promise.all(
+        openRequests.map(async (req) => {
+          const shortlistCount = await this.prisma.shortlists.count({
+            where: { requestId: req.id },
+          });
+          return {
+            id: req.id,
+            title: req.roleTitle,
+            roleTitle: req.roleTitle,
+            seniority: req.seniority,
+            status: req.status,
+            shortlistCount,
+            createdAt: req.createdAt.toISOString(),
+          };
+        }),
+      ),
       recentInvoices: outstandingInvoices.slice(0, 3).map((inv) => ({
         id: inv.id,
         number: inv.number,
@@ -864,14 +899,17 @@ export class CrmService {
 
   async updateClientWorkspace(
     dto: {
+      name?: string;
       legalName?: string;
       website?: string;
+      taxId?: string;
       vatNumber?: string;
       billingAddress?: string;
       billingCity?: string;
       billingPostalCode?: string;
       billingCountryCode?: string;
       billingEmail?: string;
+      phone?: string;
     },
     currentUser: AuthenticatedUser,
   ) {
@@ -898,23 +936,39 @@ export class CrmService {
       throw new ForbiddenException("No client company profile associated with this account");
     }
 
-    const updated = await this.prisma.companies.update({
-      where: { id: companyId },
-      data: {
-        ...(dto.legalName !== undefined && { legalName: dto.legalName }),
-        ...(dto.website !== undefined && { website: dto.website }),
-        ...(dto.vatNumber !== undefined && { vatNumber: dto.vatNumber }),
-        ...(dto.billingAddress !== undefined && { billingAddress: dto.billingAddress }),
-        ...(dto.billingCity !== undefined && { billingCity: dto.billingCity }),
-        ...(dto.billingPostalCode !== undefined && { billingPostalCode: dto.billingPostalCode }),
-        ...(dto.billingCountryCode !== undefined && { billingCountryCode: dto.billingCountryCode }),
-        ...(dto.billingEmail !== undefined && { billingEmail: dto.billingEmail }),
-      },
-    });
+    const vatNumber = dto.vatNumber ?? dto.taxId;
+    const legalName = dto.legalName ?? dto.name;
+
+    const updated = await this.prisma.withUserContext(currentUser, async (tx) =>
+      tx.companies.update({
+        where: { id: companyId },
+        data: {
+          ...(dto.name !== undefined && { name: dto.name }),
+          ...(legalName !== undefined && { legalName }),
+          ...(dto.website !== undefined && { website: dto.website }),
+          ...(vatNumber !== undefined && { vatNumber }),
+          ...(dto.billingAddress !== undefined && { billingAddress: dto.billingAddress }),
+          ...(dto.billingCity !== undefined && { billingCity: dto.billingCity }),
+          ...(dto.billingPostalCode !== undefined && { billingPostalCode: dto.billingPostalCode }),
+          ...(dto.billingCountryCode !== undefined && { billingCountryCode: dto.billingCountryCode }),
+          ...(dto.billingEmail !== undefined && { billingEmail: dto.billingEmail }),
+        },
+      }),
+    );
 
     return {
       message: "Company profile updated successfully",
-      company: updated,
+      company: {
+        id: updated.id,
+        name: updated.name,
+        legalName: updated.legalName,
+        vatNumber: updated.vatNumber,
+        taxId: updated.vatNumber,
+        website: updated.website,
+        billingEmail: updated.billingEmail,
+        billingAddress: updated.billingAddress,
+        currency: updated.currency,
+      },
     };
   }
 
