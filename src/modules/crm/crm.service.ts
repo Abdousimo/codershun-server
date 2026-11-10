@@ -914,16 +914,21 @@ export class CrmService {
     currentUser: AuthenticatedUser,
   ) {
     let companyId = currentUser.companyId;
-    if (!companyId && currentUser.id) {
+    if (currentUser.id) {
       const cu = await this.prisma.companyUsers.findFirst({
         where: { userId: currentUser.id },
         select: { companyId: true, isAdmin: true },
       });
-      if (cu && !cu.isAdmin && currentUser.role !== UserRole.client_admin && currentUser.role !== UserRole.super_admin) {
-        throw new ForbiddenException("Only company admins can update workspace settings");
+      if (currentUser.role !== UserRole.client_admin && currentUser.role !== UserRole.super_admin) {
+        if (!cu || !cu.isAdmin) {
+          throw new ForbiddenException("Only company admins can update workspace settings");
+        }
       }
-      companyId = cu?.companyId;
+      if (!companyId) {
+        companyId = cu?.companyId;
+      }
     }
+
     if (!companyId && currentUser.role === UserRole.super_admin) {
       const firstComp = await this.prisma.companies.findFirst({
         where: { deletedAt: null },
@@ -1031,15 +1036,19 @@ export class CrmService {
     currentUser: AuthenticatedUser,
   ) {
     let companyId = currentUser.companyId;
-    if (!companyId && currentUser.id) {
+    if (currentUser.id) {
       const cu = await this.prisma.companyUsers.findFirst({
         where: { userId: currentUser.id },
         select: { companyId: true, isAdmin: true },
       });
-      if (cu && !cu.isAdmin && currentUser.role !== UserRole.client_admin && currentUser.role !== UserRole.super_admin) {
-        throw new ForbiddenException("Only company admins can invite team members");
+      if (currentUser.role !== UserRole.client_admin && currentUser.role !== UserRole.super_admin) {
+        if (!cu || !cu.isAdmin) {
+          throw new ForbiddenException("Only company admins can invite team members");
+        }
       }
-      companyId = cu?.companyId;
+      if (!companyId) {
+        companyId = cu?.companyId;
+      }
     }
     if (!companyId && currentUser.role === UserRole.super_admin) {
       const firstComp = await this.prisma.companies.findFirst({

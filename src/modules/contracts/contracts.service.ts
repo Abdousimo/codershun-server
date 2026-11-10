@@ -389,11 +389,61 @@ export class ContractsService {
   }
 
   async getClientContractById(id: string, currentUser: AuthenticatedUser) {
-    const contracts = await this.getClientContracts(currentUser);
-    const contract = contracts.find((c) => c.id === id);
+    const contract = await this.prisma.contracts.findUnique({
+      where: { id },
+    });
     if (!contract) {
-      throw new NotFoundException("Contract not found or access denied");
+      throw new NotFoundException("Contract not found");
     }
-    return contract;
+
+    let companyId = currentUser?.companyId;
+    if (!companyId && currentUser?.id && this.prisma.companyUsers?.findFirst) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true },
+      });
+      companyId = cu?.companyId;
+    }
+    if (!companyId && currentUser?.role === UserRole.super_admin) {
+      companyId = contract.companyId;
+    }
+
+    if (currentUser?.role !== UserRole.super_admin && contract.companyId !== companyId) {
+      if (contract.placementId) {
+        const placement = await this.prisma.placements.findUnique({
+          where: { id: contract.placementId },
+          select: { companyId: true },
+        });
+        if (placement?.companyId !== companyId) {
+          throw new ForbiddenException("Access to this contract is denied");
+        }
+      } else {
+        throw new ForbiddenException("Access to this contract is denied");
+      }
+    }
+
+    const signatories = await this.prisma.contractSignatories.findMany({
+      where: { contractId: contract.id },
+      orderBy: { signingOrder: "asc" },
+    });
+
+    return {
+      id: contract.id,
+      title: contract.title,
+      type: contract.type,
+      status: contract.signatureStatus,
+      effectiveDate: contract.effectiveDate?.toISOString().split("T")[0] ?? null,
+      expiryDate: contract.expiryDate?.toISOString().split("T")[0] ?? null,
+      signedFileId: contract.signedFileId,
+      fileId: contract.fileId,
+      signatories: signatories.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.party === "talent" ? "talent@codershub.dz" : s.email,
+        party: s.party,
+        signedAt: s.signedAt?.toISOString() ?? null,
+      })),
+      createdAt: contract.createdAt.toISOString(),
+    };
   }
 }

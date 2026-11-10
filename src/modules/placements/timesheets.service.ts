@@ -303,9 +303,13 @@ export class TimesheetsService {
   // CLIENT PORTAL TIMESHEET METHODS
   // ==========================================
 
-  async getClientTimesheets(monthParam?: string, placementIdParam?: string, currentUser?: AuthenticatedUser) {
+  async getClientTimesheets(
+    monthParam?: string,
+    placementIdParam?: string,
+    currentUser?: AuthenticatedUser,
+  ) {
     let companyId = currentUser?.companyId;
-    if (!companyId && currentUser?.id) {
+    if (!companyId && currentUser?.id && this.prisma.companyUsers?.findFirst) {
       const cu = await this.prisma.companyUsers.findFirst({
         where: { userId: currentUser.id },
         select: { companyId: true },
@@ -326,128 +330,120 @@ export class TimesheetsService {
     const placements = await this.prisma.placements.findMany({
       where: {
         companyId,
-        status: { in: ["in_trial", "active", "notice", "ended"] },
+        ...(placementIdParam && { id: placementIdParam }),
+        deletedAt: null,
       },
-      orderBy: { startDate: "desc" },
+      select: {
+        id: true,
+        reference: true,
+        talentId: true,
+        jobRoleId: true,
+      },
     });
 
-    const availablePlacements = await Promise.all(
-      placements.map(async (p) => {
-        let talentName = `Engineer ${p.reference}`;
-        if (p.talentId) {
-          const tal = await this.prisma.talents.findUnique({
-            where: { id: p.talentId },
-            select: { firstName: true },
-          });
-          if (tal?.firstName) talentName = tal.firstName;
-        }
-        return {
-          id: p.id,
-          reference: p.reference,
-          talentName,
-          status: p.status,
-          engagementModel: p.engagementModel,
-        };
-      }),
-    );
-
-    const activePlacement = placementIdParam
-      ? placements.find((p) => p.id === placementIdParam)
-      : placements[0];
-
-    const targetDate = monthParam ? new Date(`${monthParam}-01T00:00:00Z`) : new Date();
-    const targetMonthStr = `${targetDate.getUTCFullYear()}-${String(targetDate.getUTCMonth() + 1).padStart(2, "0")}`;
-
-    let timesheet = null;
-    let entries: any[] = [];
-    let absences: any[] = [];
-
-    if (activePlacement) {
-      timesheet = await this.prisma.timesheets.findFirst({
-        where: {
-          placementId: activePlacement.id,
-          periodMonth: {
-            gte: new Date(`${targetMonthStr}-01T00:00:00Z`),
-            lt: new Date(
-              targetDate.getUTCMonth() === 11
-                ? `${targetDate.getUTCFullYear() + 1}-01-01T00:00:00Z`
-                : `${targetDate.getUTCFullYear()}-${String(targetDate.getUTCMonth() + 2).padStart(2, "0")}-01T00:00:00Z`,
-            ),
-          },
-        },
-      });
-
-      if (timesheet) {
-        entries = await this.prisma.timesheetEntries.findMany({
-          where: { timesheetId: timesheet.id },
-          orderBy: { workDate: "asc" },
-        });
-      }
-
-      absences = await this.prisma.absences.findMany({
-        where: {
-          placementId: activePlacement.id,
-          startDate: {
-            gte: new Date(`${targetMonthStr}-01T00:00:00Z`),
-          },
-        },
-      });
+    const placementIds = placements.map((p) => p.id);
+    if (placementIds.length === 0) {
+      return [];
     }
 
-    const placementIds = placements.map((p) => p.id);
-    const history = placementIds.length > 0
-      ? await this.prisma.timesheets.findMany({
-          where: {
-            placementId: { in: placementIds },
-          },
-          orderBy: { periodMonth: "desc" },
-          take: 20,
-        })
-      : [];
-
-    return {
-      availablePlacements,
-      selectedPlacementId: activePlacement?.id || null,
-      timesheet: timesheet
-        ? {
-            id: timesheet.id,
-            placementId: timesheet.placementId,
-            periodMonth: timesheet.periodMonth ? timesheet.periodMonth.toISOString().split("T")[0].slice(0, 7) : targetMonthStr,
-            status: timesheet.status,
-            totalHours: timesheet.totalHours ? timesheet.totalHours.toString() : "0.0",
-            totalDays: timesheet.totalDays ? timesheet.totalDays.toString() : "0.0",
-            submittedAt: timesheet.submittedAt?.toISOString() || null,
-            approvedAt: timesheet.approvedAt?.toISOString() || null,
-            rejectionComment: timesheet.rejectionComment || null,
-          }
-        : null,
-      entries: entries.map((e) => ({
-        id: e.id,
-        workDate: e.workDate.toISOString().split("T")[0],
-        hours: Number(e.hours),
-        projectTask: e.projectTask,
-        note: e.note,
-      })),
-      absences: absences.map((a) => ({
-        id: a.id,
-        type: a.type,
-        startDate: a.startDate.toISOString().split("T")[0],
-        endDate: a.endDate.toISOString().split("T")[0],
-        days: a.days ? a.days.toString() : "1.0",
-        isPaidToTalent: a.isPaidToTalent,
-        note: a.notes,
-      })),
-      history: history.map((h) => ({
-        id: h.id,
-        periodMonth: h.periodMonth ? h.periodMonth.toISOString().split("T")[0].slice(0, 7) : "",
-        status: h.status,
-        totalDays: h.totalDays ? h.totalDays.toString() : "0.0",
-        totalHours: h.totalHours ? h.totalHours.toString() : "0.0",
-        submittedAt: h.submittedAt?.toISOString() || null,
-        approvedAt: h.approvedAt?.toISOString() || null,
-        rejectionComment: h.rejectionComment || null,
-      })),
+    const whereTimesheets: Prisma.TimesheetsWhereInput = {
+      placementId: { in: placementIds },
     };
+
+    if (monthParam) {
+      const targetDate = new Date(`${monthParam}-01T00:00:00Z`);
+      if (!isNaN(targetDate.getTime())) {
+        const nextMonthYear =
+          targetDate.getUTCMonth() === 11
+            ? targetDate.getUTCFullYear() + 1
+            : targetDate.getUTCFullYear();
+        const nextMonthNum =
+          targetDate.getUTCMonth() === 11 ? 1 : targetDate.getUTCMonth() + 2;
+        const nextMonthStr = `${nextMonthYear}-${String(nextMonthNum).padStart(2, "0")}-01T00:00:00Z`;
+
+        whereTimesheets.periodMonth = {
+          gte: new Date(`${monthParam}-01T00:00:00Z`),
+          lt: new Date(nextMonthStr),
+        };
+      }
+    }
+
+    const timesheets = await this.prisma.timesheets.findMany({
+      where: whereTimesheets,
+      orderBy: { periodMonth: "desc" },
+    });
+
+    const placementMap = new Map(placements.map((p) => [p.id, p]));
+    const talentIds = placements.map((p) => p.talentId).filter(Boolean) as string[];
+    const jobRoleIds = placements.map((p) => p.jobRoleId).filter(Boolean) as string[];
+
+    const [talents, jobRoles] = await Promise.all([
+      talentIds.length > 0
+        ? this.prisma.talents.findMany({ where: { id: { in: talentIds } } })
+        : [],
+      jobRoleIds.length > 0
+        ? this.prisma.jobRoles.findMany({ where: { id: { in: jobRoleIds } } })
+        : [],
+    ]);
+
+    const talentMap = new Map(talents.map((t) => [t.id, t]));
+    const jobRoleMap = new Map(jobRoles.map((jr) => [jr.id, jr]));
+
+    const timesheetIds = timesheets.map((ts) => ts.id);
+    const allEntries =
+      timesheetIds.length > 0
+        ? await this.prisma.timesheetEntries.findMany({
+            where: { timesheetId: { in: timesheetIds } },
+            orderBy: { workDate: "asc" },
+          })
+        : [];
+
+    const entriesMap = new Map<string, typeof allEntries>();
+    for (const e of allEntries) {
+      const list = entriesMap.get(e.timesheetId) || [];
+      list.push(e);
+      entriesMap.set(e.timesheetId, list);
+    }
+
+    return timesheets.map((ts) => {
+      const placement = placementMap.get(ts.placementId);
+      const talent = placement?.talentId ? talentMap.get(placement.talentId) : null;
+      const jobRole = placement?.jobRoleId ? jobRoleMap.get(placement.jobRoleId) : null;
+
+      const developerName = talent
+        ? `${talent.firstName || ""} ${talent.lastName || ""}`.trim() ||
+          `Engineer ${placement?.reference || ""}`
+        : `Engineer ${placement?.reference || ""}`;
+      const roleName = jobRole?.nameEn || "Software Engineer";
+      const periodMonthStr = ts.periodMonth
+        ? ts.periodMonth.toISOString().split("T")[0].slice(0, 7)
+        : "";
+
+      const entries = entriesMap.get(ts.id) || [];
+      const daysBreakdown = entries.map((e) => ({
+        date: e.workDate.toISOString().split("T")[0],
+        hours: Number(e.hours),
+        dayFraction: Number(e.hours) >= 8 ? 1.0 : Number(e.hours) > 0 ? 0.5 : 0.0,
+        isWorkingDay: Number(e.hours) > 0,
+        note: e.note || e.projectTask || undefined,
+      }));
+
+      return {
+        id: ts.id,
+        placementId: ts.placementId,
+        developerName,
+        roleName,
+        periodMonth: periodMonthStr,
+        status: ts.status,
+        totalDays: ts.totalDays ? ts.totalDays.toString() : "0.0",
+        totalHours: ts.totalHours ? ts.totalHours.toString() : "0.0",
+        daysBreakdown,
+        rejectionReason: ts.rejectionComment || null,
+        submittedAt: ts.submittedAt ? ts.submittedAt.toISOString() : null,
+        approvedAt: ts.approvedAt ? ts.approvedAt.toISOString() : null,
+        approvedByName: null,
+      };
+    });
   }
 
   async approveTimesheet(timesheetId: string, currentUser: AuthenticatedUser) {

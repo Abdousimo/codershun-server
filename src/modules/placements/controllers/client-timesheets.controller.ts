@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { UserRole } from "../../../generated/prisma/client";
 import { AccessTokenGuard } from "../../../common/guards/access-token.guard";
 import { RolesGuard } from "../../../common/guards/roles.guard";
@@ -17,6 +17,7 @@ import { Roles } from "../../../common/decorators/roles.decorator";
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "../../../common/types/authenticated-user";
 import { TimesheetsService } from "../timesheets.service";
+import { RejectTimesheetDto } from "../dto/client-timesheet.dto";
 
 @ApiTags("Client / Timesheets")
 @ApiBearerAuth()
@@ -28,16 +29,20 @@ export class ClientTimesheetsController {
 
   @Get()
   @ApiOperation({ summary: "Get submitted timesheets and daily logs for client placements" })
+  @ApiResponse({ status: 200, description: "Returns array of client timesheet items" })
   async getTimesheets(
-    @Query("month") month: string,
-    @Query("placementId") placementId: string,
-    @CurrentUser() currentUser: AuthenticatedUser,
+    @Query("month") month?: string,
+    @Query("periodMonth") periodMonth?: string,
+    @Query("placementId") placementId?: string,
+    @CurrentUser() currentUser?: AuthenticatedUser,
   ) {
-    return this.timesheetsService.getClientTimesheets(month, placementId, currentUser);
+    const targetMonth = periodMonth || month;
+    return this.timesheetsService.getClientTimesheets(targetMonth, placementId, currentUser!);
   }
 
   @Post(":id/approve")
   @ApiOperation({ summary: "Approve a submitted monthly timesheet" })
+  @ApiResponse({ status: 200, description: "Timesheet approved successfully" })
   async approveTimesheet(
     @Param("id", ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: AuthenticatedUser,
@@ -47,12 +52,12 @@ export class ClientTimesheetsController {
 
   @Post(":id/reject")
   @ApiOperation({ summary: "Reject a timesheet and request revisions from the developer" })
+  @ApiResponse({ status: 200, description: "Timesheet returned for correction" })
   async rejectTimesheet(
     @Param("id", ParseUUIDPipe) id: string,
-    @Body("reason") reason: string,
+    @Body() dto: RejectTimesheetDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
-    return this.timesheetsService.rejectTimesheet(id, reason, currentUser);
+    return this.timesheetsService.rejectTimesheet(id, dto.reason, currentUser);
   }
 }
-

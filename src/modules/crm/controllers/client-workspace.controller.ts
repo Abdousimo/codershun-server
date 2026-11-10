@@ -36,6 +36,7 @@ export class ClientWorkspaceController {
   }
 
   @Patch()
+  @Roles(UserRole.client_admin, UserRole.super_admin)
   @ApiOperation({ summary: "Update company profile and billing information" })
   @ApiResponse({ status: 200, description: "Updated company profile" })
   async updateWorkspace(
@@ -53,6 +54,7 @@ export class ClientWorkspaceController {
   }
 
   @Post("members/invite")
+  @Roles(UserRole.client_admin, UserRole.super_admin)
   @ApiOperation({ summary: "Invite a colleague to company workspace" })
   @ApiResponse({ status: 201, description: "Member invited / created successfully" })
   async inviteMember(

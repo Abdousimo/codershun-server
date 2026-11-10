@@ -786,7 +786,7 @@ export class ShortlistsService {
         item.clientDecision === ClientDecision.hire;
       const displayName = isUnmasked && talent?.firstName
         ? `${talent.firstName} ${talent.lastName || ""}`.trim()
-        : talent?.publicSlug || `talent-${item.talentId.slice(0, 8)}`;
+        : talent?.publicSlug || `Talent #${item.talentId.slice(0, 6).toUpperCase()}`;
 
       return {
         id: item.id,
