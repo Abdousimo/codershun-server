@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   Logger,
@@ -9,9 +10,14 @@ import {
 
 import {
   CompanyStatus,
+  InvoiceStatus,
   LeadStage,
+  PlacementStatus,
   Prisma,
+  RequestStatus,
   TaskStatus,
+  TimesheetStatus,
+  UserRole,
 } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
@@ -544,6 +550,266 @@ export class CrmService {
         },
       });
     });
+  }
+
+  // ==========================================
+  // CLIENT PORTAL DASHBOARD
+  // ==========================================
+
+  async getClientDashboard(currentUser: AuthenticatedUser) {
+    let companyId = currentUser.companyId;
+    if (!companyId && currentUser.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true },
+      });
+      companyId = cu?.companyId;
+    }
+    if (!companyId && currentUser.role === UserRole.super_admin) {
+      const firstComp = await this.prisma.companies.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      companyId = firstComp?.id;
+    }
+
+    if (!companyId) {
+      throw new ForbiddenException("No client company profile associated with this account");
+    }
+
+    const company = await this.prisma.companies.findUnique({
+      where: { id: companyId },
+      select: {
+        id: true,
+        name: true,
+        legalName: true,
+        industry: true,
+        currency: true,
+        isOverdueFlagged: true,
+        accountManagerId: true,
+        paymentTermsDays: true,
+      },
+    });
+
+    if (!company) {
+      throw new NotFoundException("Company not found");
+    }
+
+    let accountManager = null;
+    if (company.accountManagerId) {
+      const am = await this.prisma.users.findUnique({
+        where: { id: company.accountManagerId },
+        select: { firstName: true, lastName: true, email: true },
+      });
+      if (am) {
+        accountManager = {
+          name: `${am.firstName || ""} ${am.lastName || ""}`.trim() || am.email,
+          email: am.email,
+        };
+      }
+    }
+
+    // Active Placements (strictly hiding internal margins & talentPay per FR-SEC-02)
+    const activePlacements = await this.prisma.placements.findMany({
+      where: {
+        companyId,
+        status: { in: [PlacementStatus.in_trial, PlacementStatus.active, PlacementStatus.notice] },
+      },
+      select: {
+        id: true,
+        reference: true,
+        status: true,
+        seniority: true,
+        engagementModel: true,
+        startDate: true,
+        trialEndDate: true,
+        clientPriceNet: true,
+        clientPrice: true,
+        currency: true,
+        talentId: true,
+        jobRoleId: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const activeCount = activePlacements.length;
+    const trialCount = activePlacements.filter((p) => p.status === PlacementStatus.in_trial).length;
+
+    // Open Talent Requests
+    const openRequestStatuses = [
+      RequestStatus.open,
+      RequestStatus.sourcing,
+      RequestStatus.shortlist_sent,
+      RequestStatus.interviewing,
+      RequestStatus.proposal_sent,
+    ];
+
+    const openRequests = await this.prisma.talentRequests.findMany({
+      where: {
+        companyId,
+        status: { in: openRequestStatuses },
+      },
+      select: {
+        id: true,
+        roleTitle: true,
+        seniority: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+
+    const openRequestsCount = await this.prisma.talentRequests.count({
+      where: {
+        companyId,
+        status: { in: openRequestStatuses },
+      },
+    });
+
+    // Pending Timesheets for this company's placements
+    const placementIds = activePlacements.map((p) => p.id);
+    const pendingTimesheets = placementIds.length > 0
+      ? await this.prisma.timesheets.findMany({
+          where: {
+            placementId: { in: placementIds },
+            status: TimesheetStatus.submitted,
+          },
+          select: {
+            id: true,
+            periodMonth: true,
+            totalDays: true,
+            totalHours: true,
+            submittedAt: true,
+            placementId: true,
+          },
+          orderBy: { submittedAt: "desc" },
+          take: 5,
+        })
+      : [];
+
+    const pendingTimesheetsCount = placementIds.length > 0
+      ? await this.prisma.timesheets.count({
+          where: {
+            placementId: { in: placementIds },
+            status: TimesheetStatus.submitted,
+          },
+        })
+      : 0;
+
+    // Outstanding Invoices
+    const outstandingInvoices = await this.prisma.invoices.findMany({
+      where: {
+        companyId,
+        status: { in: [InvoiceStatus.issued, InvoiceStatus.overdue, InvoiceStatus.partially_paid] },
+      },
+      select: {
+        id: true,
+        number: true,
+        total: true,
+        currency: true,
+        dueDate: true,
+        status: true,
+      },
+      orderBy: { dueDate: "asc" },
+    });
+
+    const outstandingTotal = outstandingInvoices.reduce(
+      (sum, inv) => sum.plus(inv.total),
+      new Prisma.Decimal(0),
+    );
+
+    // Active Team Preview (clean anonymization & price only)
+    const activeTeamPreview = await Promise.all(
+      activePlacements.slice(0, 5).map(async (p) => {
+        let roleName = "Software Engineer";
+        if (p.jobRoleId) {
+          const jr = await this.prisma.jobRoles.findUnique({
+            where: { id: p.jobRoleId },
+            select: { nameEn: true },
+          });
+          if (jr?.nameEn) roleName = jr.nameEn;
+        }
+
+        let talentDisplayName = `Engineer ${p.reference}`;
+        if (p.talentId) {
+          const tal = await this.prisma.talents.findUnique({
+            where: { id: p.talentId },
+            select: { firstName: true },
+          });
+          if (tal?.firstName) talentDisplayName = tal.firstName;
+        }
+
+        let trialDay: number | null = null;
+        if (p.status === PlacementStatus.in_trial && p.startDate) {
+          const elapsed = Math.ceil(
+            (Date.now() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24),
+          );
+          trialDay = Math.min(10, Math.max(1, elapsed));
+        }
+
+        return {
+          id: p.id,
+          reference: p.reference,
+          talentName: talentDisplayName,
+          roleName,
+          seniority: p.seniority,
+          status: p.status,
+          trialDay,
+          startDate: p.startDate ? p.startDate.toISOString().split("T")[0] : null,
+          trialEndDate: p.trialEndDate ? p.trialEndDate.toISOString().split("T")[0] : null,
+          monthlyPrice: p.clientPriceNet
+            ? new Prisma.Decimal(p.clientPriceNet).toFixed(2)
+            : p.clientPrice
+            ? new Prisma.Decimal(p.clientPrice).toFixed(2)
+            : "0.00",
+          currency: p.currency,
+        };
+      }),
+    );
+
+    return {
+      company: {
+        id: company.id,
+        name: company.name,
+        legalName: company.legalName,
+        industry: company.industry,
+        currency: company.currency,
+        isOverdueFlagged: company.isOverdueFlagged,
+        accountManager,
+      },
+      kpis: {
+        activeDevelopersCount: activeCount,
+        trialDevelopersCount: trialCount,
+        openTalentRequestsCount: openRequestsCount,
+        pendingTimesheetsCount,
+        outstandingInvoicesAmount: outstandingTotal.toFixed(2),
+        outstandingInvoicesCount: outstandingInvoices.length,
+      },
+      activeTeamPreview,
+      pendingTimesheets: pendingTimesheets.map((ts) => ({
+        id: ts.id,
+        periodMonth: ts.periodMonth,
+        totalDays: ts.totalDays ? new Prisma.Decimal(ts.totalDays).toFixed(1) : "0.0",
+        totalHours: ts.totalHours ? new Prisma.Decimal(ts.totalHours).toFixed(1) : "0.0",
+        submittedAt: ts.submittedAt ? ts.submittedAt.toISOString() : null,
+      })),
+      activeRequests: openRequests.map((req) => ({
+        id: req.id,
+        roleTitle: req.roleTitle,
+        seniority: req.seniority,
+        status: req.status,
+        createdAt: req.createdAt.toISOString(),
+      })),
+      recentInvoices: outstandingInvoices.slice(0, 3).map((inv) => ({
+        id: inv.id,
+        number: inv.number,
+        total: new Prisma.Decimal(inv.total).toFixed(2),
+        currency: inv.currency,
+        status: inv.status,
+        dueDate: inv.dueDate ? inv.dueDate.toISOString().split("T")[0] : null,
+      })),
+    };
   }
 }
 
