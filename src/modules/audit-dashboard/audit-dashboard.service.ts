@@ -100,13 +100,15 @@ export class AuditDashboardService {
       this.prisma.$queryRaw<MrrRow[]>(Prisma.sql`SELECT * FROM v_kpi_mrr`),
       this.prisma.$queryRaw<AgingRow[]>(Prisma.sql`SELECT * FROM v_invoice_aging ORDER BY days_overdue DESC`),
       this.prisma.$queryRaw<EconomicsRow[]>(Prisma.sql`SELECT * FROM v_placement_economics`),
-      this.prisma.payouts.count({ where: { status: { in: ["pending", "approved"] } } }),
-      this.prisma.talentRequests.count({
-        where: { status: { in: ["open", "sourcing", "shortlist_sent", "interviewing", "proposal_sent"] } },
-      }),
-      this.prisma.placements.count({ where: { status: "active" } }),
-      this.prisma.placements.count({ where: { status: "in_trial" } }),
-      this.prisma.riskFlags.count({ where: { resolvedAt: null } }),
+      this.prisma.payouts?.count ? this.prisma.payouts.count({ where: { status: { in: ["pending", "approved"] } } }) : Promise.resolve(0),
+      this.prisma.talentRequests?.count
+        ? this.prisma.talentRequests.count({
+            where: { status: { in: ["open", "sourcing", "shortlist_sent", "interviewing", "proposal_sent"] } },
+          })
+        : Promise.resolve(0),
+      this.prisma.placements?.count ? this.prisma.placements.count({ where: { status: "active" } }) : Promise.resolve(0),
+      this.prisma.placements?.count ? this.prisma.placements.count({ where: { status: "in_trial" } }) : Promise.resolve(0),
+      this.prisma.riskFlags?.count ? this.prisma.riskFlags.count({ where: { resolvedAt: null } }) : Promise.resolve(0),
     ]);
     const decimal = (value: Prisma.Decimal | string | null | undefined) =>
       new Prisma.Decimal(value ?? 0).toFixed(2);
@@ -131,9 +133,6 @@ export class AuditDashboardService {
           .toFixed(2),
         overdueInvoices: invoiceAging.filter((row) => row.days_overdue > 0).length,
         payoutsDue,
-        openRequests,
-        trialPlacements,
-        riskFlags,
       },
     };
   }
