@@ -5,6 +5,7 @@ import { LeadsController } from "./controllers/leads.controller";
 import { CompaniesController } from "./controllers/companies.controller";
 import { CrmTimelineController } from "./controllers/crm-timeline.controller";
 import { ClientDashboardController } from "./controllers/client-dashboard.controller";
+import { ClientWorkspaceController } from "./controllers/client-workspace.controller";
 import { CrmService } from "./crm.service";
 
 @Module({
@@ -14,6 +15,7 @@ import { CrmService } from "./crm.service";
     CompaniesController,
     CrmTimelineController,
     ClientDashboardController,
+    ClientWorkspaceController,
   ],
   providers: [CrmService],
   exports: [CrmService],

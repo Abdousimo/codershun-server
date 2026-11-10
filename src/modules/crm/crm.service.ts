@@ -811,5 +811,234 @@ export class CrmService {
       })),
     };
   }
+
+  // ==========================================
+  // CLIENT PORTAL WORKSPACE & MEMBERS
+  // ==========================================
+
+  async getClientWorkspace(currentUser: AuthenticatedUser) {
+    let companyId = currentUser.companyId;
+    if (!companyId && currentUser.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true },
+      });
+      companyId = cu?.companyId;
+    }
+    if (!companyId && currentUser.role === UserRole.super_admin) {
+      const firstComp = await this.prisma.companies.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      companyId = firstComp?.id;
+    }
+
+    if (!companyId) {
+      throw new ForbiddenException("No client company profile associated with this account");
+    }
+
+    const company = await this.prisma.companies.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      throw new NotFoundException("Company not found");
+    }
+
+    return {
+      id: company.id,
+      name: company.name,
+      legalName: company.legalName,
+      industry: company.industry,
+      website: company.website,
+      vatNumber: company.vatNumber,
+      billingAddress: company.billingAddress,
+      billingCity: company.billingCity,
+      billingPostalCode: company.billingPostalCode,
+      billingCountryCode: company.billingCountryCode,
+      billingEmail: company.billingEmail,
+      currency: company.currency,
+      paymentTermsDays: company.paymentTermsDays,
+    };
+  }
+
+  async updateClientWorkspace(
+    dto: {
+      legalName?: string;
+      website?: string;
+      vatNumber?: string;
+      billingAddress?: string;
+      billingCity?: string;
+      billingPostalCode?: string;
+      billingCountryCode?: string;
+      billingEmail?: string;
+    },
+    currentUser: AuthenticatedUser,
+  ) {
+    let companyId = currentUser.companyId;
+    if (!companyId && currentUser.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true, isAdmin: true },
+      });
+      if (cu && !cu.isAdmin && currentUser.role !== UserRole.client_admin && currentUser.role !== UserRole.super_admin) {
+        throw new ForbiddenException("Only company admins can update workspace settings");
+      }
+      companyId = cu?.companyId;
+    }
+    if (!companyId && currentUser.role === UserRole.super_admin) {
+      const firstComp = await this.prisma.companies.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      companyId = firstComp?.id;
+    }
+
+    if (!companyId) {
+      throw new ForbiddenException("No client company profile associated with this account");
+    }
+
+    const updated = await this.prisma.companies.update({
+      where: { id: companyId },
+      data: {
+        ...(dto.legalName !== undefined && { legalName: dto.legalName }),
+        ...(dto.website !== undefined && { website: dto.website }),
+        ...(dto.vatNumber !== undefined && { vatNumber: dto.vatNumber }),
+        ...(dto.billingAddress !== undefined && { billingAddress: dto.billingAddress }),
+        ...(dto.billingCity !== undefined && { billingCity: dto.billingCity }),
+        ...(dto.billingPostalCode !== undefined && { billingPostalCode: dto.billingPostalCode }),
+        ...(dto.billingCountryCode !== undefined && { billingCountryCode: dto.billingCountryCode }),
+        ...(dto.billingEmail !== undefined && { billingEmail: dto.billingEmail }),
+      },
+    });
+
+    return {
+      message: "Company profile updated successfully",
+      company: updated,
+    };
+  }
+
+  async getClientWorkspaceMembers(currentUser: AuthenticatedUser) {
+    let companyId = currentUser.companyId;
+    if (!companyId && currentUser.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true },
+      });
+      companyId = cu?.companyId;
+    }
+    if (!companyId && currentUser.role === UserRole.super_admin) {
+      const firstComp = await this.prisma.companies.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      companyId = firstComp?.id;
+    }
+
+    if (!companyId) {
+      throw new ForbiddenException("No client company profile associated with this account");
+    }
+
+    const members = await this.prisma.companyUsers.findMany({
+      where: { companyId },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const userIds = members.map((m) => m.userId);
+    const users = await this.prisma.users.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return members.map((m) => {
+      const u = userMap.get(m.userId);
+      return {
+        id: m.id,
+        userId: m.userId,
+        name: u ? `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email : "Colleague",
+        email: u?.email || "",
+        role: u?.role || "client_user",
+        isAdmin: m.isAdmin,
+        canViewInvoices: m.canViewInvoices,
+        createdAt: m.createdAt.toISOString(),
+      };
+    });
+  }
+
+  async inviteClientWorkspaceMember(
+    dto: {
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      isAdmin?: boolean;
+      canViewInvoices?: boolean;
+    },
+    currentUser: AuthenticatedUser,
+  ) {
+    let companyId = currentUser.companyId;
+    if (!companyId && currentUser.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true, isAdmin: true },
+      });
+      if (cu && !cu.isAdmin && currentUser.role !== UserRole.client_admin && currentUser.role !== UserRole.super_admin) {
+        throw new ForbiddenException("Only company admins can invite team members");
+      }
+      companyId = cu?.companyId;
+    }
+    if (!companyId && currentUser.role === UserRole.super_admin) {
+      const firstComp = await this.prisma.companies.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      companyId = firstComp?.id;
+    }
+
+    if (!companyId) {
+      throw new ForbiddenException("No client company profile associated with this account");
+    }
+
+    const email = dto.email.trim().toLowerCase();
+
+    // Check if user already exists
+    let user = await this.prisma.users.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      user = await this.prisma.users.create({
+        data: {
+          email,
+          firstName: dto.firstName || "Colleague",
+          lastName: dto.lastName || "",
+          role: dto.isAdmin ? UserRole.client_admin : UserRole.client_user,
+          passwordHash: "INVITED_PENDING_ACTIVATION",
+        },
+      });
+    }
+
+    const cu = await this.prisma.companyUsers.upsert({
+      where: { companyId_userId: { companyId, userId: user.id } },
+      update: {
+        isAdmin: !!dto.isAdmin,
+        canViewInvoices: !!dto.canViewInvoices,
+      },
+      create: {
+        companyId,
+        userId: user.id,
+        isAdmin: !!dto.isAdmin,
+        canViewInvoices: !!dto.canViewInvoices,
+        invitedBy: currentUser.id,
+        invitedAt: new Date(),
+      },
+    });
+
+    return {
+      message: "Colleague successfully added to company workspace",
+      memberId: cu.id,
+      email: user.email,
+    };
+  }
 }
 

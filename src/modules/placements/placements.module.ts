@@ -8,12 +8,14 @@ import { AdminPlacementsController } from "./controllers/admin-placements.contro
 import { ClientPlacementsController } from "./controllers/client-placements.controller";
 import { TalentPlacementsController } from "./controllers/talent-placements.controller";
 import { TalentTimesheetsController } from "./controllers/talent-timesheets.controller";
+import { ClientTimesheetsController } from "./controllers/client-timesheets.controller";
 
 @Module({
   imports: [SettingsModule],
   controllers: [
     AdminPlacementsController,
     ClientPlacementsController,
+    ClientTimesheetsController,
     TalentPlacementsController,
     TalentTimesheetsController,
   ],

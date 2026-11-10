@@ -3,10 +3,15 @@ import { FilesModule } from "../files/files.module";
 import { ContractsService } from "./contracts.service";
 import { AdminContractsController } from "./controllers/admin-contracts.controller";
 import { TalentContractsController } from "./controllers/talent-contracts.controller";
+import { ClientContractsController } from "./controllers/client-contracts.controller";
 
 @Module({
   imports: [FilesModule],
-  controllers: [AdminContractsController, TalentContractsController],
+  controllers: [
+    AdminContractsController,
+    ClientContractsController,
+    TalentContractsController,
+  ],
   providers: [ContractsService],
   exports: [ContractsService],
 })

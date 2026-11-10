@@ -91,12 +91,27 @@ export class InvoicesService {
 
   async findAll(query: QueryInvoicesDto, user: AuthenticatedUser) {
     const where: Prisma.InvoicesWhereInput = {};
-    if (STAFF_ROLES.includes(user.role)) {
-      if (query.companyId) where.companyId = query.companyId;
-    } else if (user.companyId) {
-      where.companyId = user.companyId;
+    let scopedCompanyId = user.companyId;
+
+    if (!STAFF_ROLES.includes(user.role)) {
+      if (!scopedCompanyId && user.id && this.prisma.companyUsers?.findFirst) {
+        const cu = await this.prisma.companyUsers.findFirst({
+          where: { userId: user.id },
+          select: { companyId: true, canViewInvoices: true },
+        });
+        if (cu) {
+          if (!cu.canViewInvoices && user.role !== UserRole.client_admin) {
+            throw new ForbiddenException("You do not have permission to view invoices");
+          }
+          scopedCompanyId = cu.companyId;
+        }
+      }
+      if (!scopedCompanyId) {
+        throw new ForbiddenException("User has no invoice scope");
+      }
+      where.companyId = scopedCompanyId;
     } else {
-      throw new ForbiddenException("User has no invoice scope");
+      if (query.companyId) where.companyId = query.companyId;
     }
     if (query.status) where.status = query.status;
     if (query.kind) where.kind = query.kind;
@@ -114,8 +129,19 @@ export class InvoicesService {
 
   async findById(id: string, user: AuthenticatedUser): Promise<InvoiceResponseDto> {
     const invoice = await this.getRaw(id);
-    if (!STAFF_ROLES.includes(user.role) && invoice.companyId !== user.companyId) {
-      throw new ForbiddenException("Access to this invoice is denied");
+    if (!STAFF_ROLES.includes(user.role)) {
+      let scopedCompanyId = user.companyId;
+      if (!scopedCompanyId && user.id && this.prisma.companyUsers?.findFirst) {
+        const cu = await this.prisma.companyUsers.findFirst({
+          where: { userId: user.id },
+          select: { companyId: true },
+        });
+        scopedCompanyId = cu?.companyId;
+      }
+
+      if (invoice.companyId !== scopedCompanyId) {
+        throw new ForbiddenException("Access to this invoice is denied");
+      }
     }
     return this.mapResponse(invoice);
   }

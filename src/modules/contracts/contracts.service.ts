@@ -318,4 +318,82 @@ export class ContractsService {
     }
     return contract;
   }
+
+  // ==========================================
+  // CLIENT PORTAL CONTRACT METHODS
+  // ==========================================
+
+  async getClientContracts(currentUser: AuthenticatedUser) {
+    let companyId = currentUser?.companyId;
+    if (!companyId && currentUser?.id) {
+      const cu = await this.prisma.companyUsers.findFirst({
+        where: { userId: currentUser.id },
+        select: { companyId: true },
+      });
+      companyId = cu?.companyId;
+    }
+    if (!companyId && currentUser?.role === UserRole.super_admin) {
+      const firstComp = await this.prisma.companies.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      companyId = firstComp?.id;
+    }
+    if (!companyId) {
+      throw new ForbiddenException("No client company profile found");
+    }
+
+    const placements = await this.prisma.placements.findMany({
+      where: { companyId },
+      select: { id: true },
+    });
+    const placementIds = placements.map((p) => p.id);
+
+    const contracts = await this.prisma.contracts.findMany({
+      where: {
+        OR: [
+          { companyId },
+          { placementId: { in: placementIds } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return Promise.all(
+      contracts.map(async (c) => {
+        const signatories = await this.prisma.contractSignatories.findMany({
+          where: { contractId: c.id },
+          orderBy: { signingOrder: "asc" },
+        });
+
+        return {
+          id: c.id,
+          title: c.title,
+          type: c.type,
+          status: c.signatureStatus,
+          effectiveDate: c.effectiveDate?.toISOString().split("T")[0] ?? null,
+          expiryDate: c.expiryDate?.toISOString().split("T")[0] ?? null,
+          signedFileId: c.signedFileId,
+          fileId: c.fileId,
+          signatories: signatories.map((s) => ({
+            id: s.id,
+            name: s.name,
+            email: s.email,
+            party: s.party,
+            signedAt: s.signedAt?.toISOString() ?? null,
+          })),
+          createdAt: c.createdAt.toISOString(),
+        };
+      }),
+    );
+  }
+
+  async getClientContractById(id: string, currentUser: AuthenticatedUser) {
+    const contracts = await this.getClientContracts(currentUser);
+    const contract = contracts.find((c) => c.id === id);
+    if (!contract) {
+      throw new NotFoundException("Contract not found or access denied");
+    }
+    return contract;
+  }
 }
