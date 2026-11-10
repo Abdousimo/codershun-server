@@ -20,7 +20,7 @@ import { QueryPlacementsDto } from "../dto/query-placements.dto";
 @ApiTags("Talent / Placements")
 @ApiBearerAuth()
 @UseGuards(AccessTokenGuard, RolesGuard)
-@Roles(UserRole.talent)
+@Roles(UserRole.talent, UserRole.super_admin)
 @Controller("talent/placements")
 export class TalentPlacementsController {
   constructor(@Inject(PlacementsService) private readonly placementsService: PlacementsService) {}

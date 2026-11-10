@@ -3,9 +3,11 @@ import { SettingsModule } from "../settings/settings.module";
 import { PlacementsService } from "./placements.service";
 import { PlacementReviewsService } from "./placement-reviews.service";
 import { PlacementOnboardingService } from "./placement-onboarding.service";
+import { TimesheetsService } from "./timesheets.service";
 import { AdminPlacementsController } from "./controllers/admin-placements.controller";
 import { ClientPlacementsController } from "./controllers/client-placements.controller";
 import { TalentPlacementsController } from "./controllers/talent-placements.controller";
+import { TalentTimesheetsController } from "./controllers/talent-timesheets.controller";
 
 @Module({
   imports: [SettingsModule],
@@ -13,16 +15,19 @@ import { TalentPlacementsController } from "./controllers/talent-placements.cont
     AdminPlacementsController,
     ClientPlacementsController,
     TalentPlacementsController,
+    TalentTimesheetsController,
   ],
   providers: [
     PlacementsService,
     PlacementReviewsService,
     PlacementOnboardingService,
+    TimesheetsService,
   ],
   exports: [
     PlacementsService,
     PlacementReviewsService,
     PlacementOnboardingService,
+    TimesheetsService,
   ],
 })
 export class PlacementsModule {}
