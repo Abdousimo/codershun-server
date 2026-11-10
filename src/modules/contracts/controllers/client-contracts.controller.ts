@@ -38,3 +38,4 @@ export class ClientContractsController {
     return this.contractsService.getClientContractById(id, currentUser);
   }
 }
+

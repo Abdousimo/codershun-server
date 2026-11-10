@@ -73,3 +73,4 @@ export class ClientWorkspaceController {
     return this.crmService.inviteClientWorkspaceMember(body, currentUser);
   }
 }
+

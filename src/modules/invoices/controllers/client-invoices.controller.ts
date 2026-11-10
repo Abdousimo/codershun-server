@@ -37,3 +37,4 @@ export class ClientInvoicesController {
     return this.invoicesService.findById(id, user);
   }
 }
+
