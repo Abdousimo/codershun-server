@@ -251,4 +251,167 @@ export class PayoutsService {
       updatedAt: payout.updatedAt.toISOString(),
     };
   }
+
+  // ==========================================
+  // TALENT PORTAL PAYOUT METHODS
+  // ==========================================
+
+  async getTalentPayouts(currentUser: AuthenticatedUser) {
+    let talentId = currentUser?.talentId;
+    if (!talentId && currentUser?.id) {
+      const talent = await this.prisma.talents.findFirst({
+        where: { userId: currentUser.id },
+        select: { id: true },
+      });
+      talentId = talent?.id;
+    }
+    if (!talentId && currentUser?.role === UserRole.super_admin) {
+      const firstTalent = await this.prisma.talents.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      talentId = firstTalent?.id;
+    }
+    if (!talentId) {
+      throw new ForbiddenException("No talent profile found");
+    }
+
+    const payouts = await this.prisma.payouts.findMany({
+      where: { talentId },
+      orderBy: { periodMonth: "desc" },
+    });
+
+    const mapped = await Promise.all(
+      payouts.map(async (p) => {
+        const lines = await this.prisma.payoutLines.findMany({
+          where: { payoutId: p.id },
+          orderBy: { sortOrder: "asc" },
+        });
+        return {
+          id: p.id,
+          periodMonth: p.periodMonth.toISOString().split("T")[0],
+          status: p.status,
+          currency: p.currency,
+          grossAmount: new Prisma.Decimal(p.grossAmount).toFixed(2),
+          adjustmentsTotal: new Prisma.Decimal(p.adjustmentsTotal).toFixed(2),
+          netAmount: new Prisma.Decimal(p.netAmount).toFixed(2),
+          paidAmount: p.paidAmount ? new Prisma.Decimal(p.paidAmount).toFixed(2) : null,
+          paidCurrency: p.paidCurrency,
+          method: p.method,
+          transferReference: p.transferReference,
+          paidAt: p.paidAt?.toISOString() || null,
+          hasStatement: !!p.statementFileId,
+          lines: lines.map((l) => ({
+            id: l.id,
+            kind: l.kind,
+            description: l.description,
+            days: l.days ? new Prisma.Decimal(l.days).toFixed(1) : null,
+            dailyRate: l.dailyRate ? new Prisma.Decimal(l.dailyRate).toFixed(2) : null,
+            amount: new Prisma.Decimal(l.amount).toFixed(2),
+          })),
+        };
+      }),
+    );
+
+    const currentYear = new Date().getUTCFullYear();
+    const paidPayouts = payouts.filter((p) => p.status === PayoutStatus.paid);
+    const ytdTotal = paidPayouts
+      .filter((p) => p.paidAt && p.paidAt.getUTCFullYear() === currentYear)
+      .reduce((sum, p) => sum.plus(p.netAmount), new Prisma.Decimal(0));
+    const lifetimeTotal = paidPayouts.reduce((sum, p) => sum.plus(p.netAmount), new Prisma.Decimal(0));
+    const pendingTotal = payouts
+      .filter((p) => p.status === PayoutStatus.pending || p.status === PayoutStatus.approved)
+      .reduce((sum, p) => sum.plus(p.netAmount), new Prisma.Decimal(0));
+
+    return {
+      payouts: mapped,
+      summary: {
+        ytdEarnings: ytdTotal.toFixed(2),
+        lifetimeEarnings: lifetimeTotal.toFixed(2),
+        pendingAmount: pendingTotal.toFixed(2),
+        currency: payouts[0]?.currency || "EUR",
+      },
+    };
+  }
+
+  async getTalentPayoutMethod(currentUser: AuthenticatedUser) {
+    let talentId = currentUser?.talentId;
+    if (!talentId && currentUser?.id) {
+      const talent = await this.prisma.talents.findFirst({
+        where: { userId: currentUser.id },
+        select: { id: true },
+      });
+      talentId = talent?.id;
+    }
+    if (!talentId && currentUser?.role === UserRole.super_admin) {
+      const firstTalent = await this.prisma.talents.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      talentId = firstTalent?.id;
+    }
+    if (!talentId) throw new ForbiddenException("No talent profile found");
+
+    const talent = await this.prisma.talents.findUnique({
+      where: { id: talentId },
+      select: {
+        payoutMethod: true,
+        payoutCurrency: true,
+        payoutDetails: true,
+      },
+    });
+
+    return {
+      payoutMethod: talent?.payoutMethod || null,
+      payoutCurrency: talent?.payoutCurrency || "EUR",
+      payoutDetails: (talent?.payoutDetails as any) || {},
+    };
+  }
+
+  async updateTalentPayoutMethod(
+    body: {
+      payoutMethod: any;
+      payoutCurrency?: string;
+      payoutDetails: Record<string, any>;
+    },
+    currentUser: AuthenticatedUser,
+  ) {
+    let talentId = currentUser?.talentId;
+    if (!talentId && currentUser?.id) {
+      const talent = await this.prisma.talents.findFirst({
+        where: { userId: currentUser.id },
+        select: { id: true },
+      });
+      talentId = talent?.id;
+    }
+    if (!talentId && currentUser?.role === UserRole.super_admin) {
+      const firstTalent = await this.prisma.talents.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      talentId = firstTalent?.id;
+    }
+    if (!talentId) throw new ForbiddenException("No talent profile found");
+
+    const updated = await this.prisma.talents.update({
+      where: { id: talentId },
+      data: {
+        payoutMethod: body.payoutMethod,
+        payoutCurrency: (body.payoutCurrency || "EUR").toUpperCase(),
+        payoutDetails: body.payoutDetails,
+      },
+      select: {
+        payoutMethod: true,
+        payoutCurrency: true,
+        payoutDetails: true,
+      },
+    });
+
+    return {
+      payoutMethod: updated.payoutMethod,
+      payoutCurrency: updated.payoutCurrency,
+      payoutDetails: updated.payoutDetails,
+      message: "Payout coordinates updated successfully",
+    };
+  }
 }

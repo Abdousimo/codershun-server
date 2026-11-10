@@ -231,4 +231,91 @@ export class ContractsService {
       updatedAt: contract.updatedAt.toISOString(),
     };
   }
+
+  // ==========================================
+  // TALENT PORTAL CONTRACT METHODS
+  // ==========================================
+
+  async getTalentContracts(currentUser: AuthenticatedUser) {
+    let talentId = currentUser?.talentId;
+    if (!talentId && currentUser?.id) {
+      const talent = await this.prisma.talents.findFirst({
+        where: { userId: currentUser.id },
+        select: { id: true },
+      });
+      talentId = talent?.id;
+    }
+    if (!talentId && currentUser?.role === UserRole.super_admin) {
+      const firstTalent = await this.prisma.talents.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      talentId = firstTalent?.id;
+    }
+    if (!talentId) {
+      throw new ForbiddenException("No talent profile found");
+    }
+
+    const placements = await this.prisma.placements.findMany({
+      where: { talentId },
+      select: { id: true, companyId: true },
+    });
+    const placementIds = placements.map((p) => p.id);
+
+    const contracts = await this.prisma.contracts.findMany({
+      where: {
+        OR: [
+          { talentId },
+          { placementId: { in: placementIds } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return Promise.all(
+      contracts.map(async (c) => {
+        let companyName = "Coders Hub SAS";
+        if (c.companyId) {
+          const comp = await this.prisma.companies.findUnique({
+            where: { id: c.companyId },
+            select: { name: true },
+          });
+          if (comp?.name) companyName = comp.name;
+        }
+
+        const signatories = await this.prisma.contractSignatories.findMany({
+          where: { contractId: c.id },
+          orderBy: { signingOrder: "asc" },
+        });
+
+        return {
+          id: c.id,
+          title: c.title,
+          type: c.type,
+          companyName,
+          status: c.signatureStatus,
+          effectiveDate: c.effectiveDate?.toISOString().split("T")[0] ?? null,
+          expiryDate: c.expiryDate?.toISOString().split("T")[0] ?? null,
+          signedFileId: c.signedFileId,
+          fileId: c.fileId,
+          signatories: signatories.map((s) => ({
+            id: s.id,
+            name: s.name,
+            email: s.email,
+            signedAt: s.signedAt?.toISOString() ?? null,
+          })),
+          createdAt: c.createdAt.toISOString(),
+        };
+      }),
+    );
+  }
+
+  async getTalentContractById(id: string, currentUser: AuthenticatedUser) {
+    const contracts = await this.getTalentContracts(currentUser);
+    const contract = contracts.find((c) => c.id === id);
+    if (!contract) {
+      throw new NotFoundException("Contract not found or access denied");
+    }
+    return contract;
+  }
 }

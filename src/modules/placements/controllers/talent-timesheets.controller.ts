@@ -54,3 +54,4 @@ export class TalentTimesheetsController {
     return this.timesheetsService.submitTimesheet(id, currentUser);
   }
 }
+
