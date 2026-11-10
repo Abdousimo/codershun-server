@@ -514,7 +514,12 @@ export class AuthService {
     };
   }
 
-  private async resolveUserScopes(userId: string, role: UserRole): Promise<{ companyId?: string | null; talentId?: string | null }> {
+  private async resolveUserScopes(userId: string, role: UserRole): Promise<{
+    companyId?: string | null;
+    talentId?: string | null;
+    canViewInvoices?: boolean;
+    isCompanyAdmin?: boolean;
+  }> {
     if (role === UserRole.talent) {
       const talent = await this.prisma.talents.findFirst({
         where: { userId },
@@ -526,9 +531,14 @@ export class AuthService {
     if (role === UserRole.client_user || role === UserRole.client_admin) {
       const companyUser = await this.prisma.companyUsers.findFirst({
         where: { userId },
-        select: { companyId: true },
+        select: { companyId: true, canViewInvoices: true, isAdmin: true },
       });
-      return { companyId: companyUser?.companyId ?? null, talentId: null };
+      return {
+        companyId: companyUser?.companyId ?? null,
+        talentId: null,
+        canViewInvoices: role === UserRole.client_admin ? true : (companyUser?.canViewInvoices ?? false),
+        isCompanyAdmin: role === UserRole.client_admin || (companyUser?.isAdmin ?? false),
+      };
     }
 
     return { companyId: null, talentId: null };
