@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { BadRequestException, ForbiddenException, UnprocessableEntityException } from "@nestjs/common";
-import {
-  PaymentMethod,
-  Prisma,
-  ReferralStatus,
-  RewardStatus,
-  RewardType,
-  UserRole,
-} from "../../generated/prisma/client";
+import { PaymentMethod, Prisma, ReferralStatus, RewardStatus, RewardType, UserRole } from "../../generated/prisma/client";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
 import { ReferralsService } from "./referrals.service";
 
@@ -82,9 +75,7 @@ describe("ReferralsService", () => {
         findFirst: resolved({ id: "rule-1", baseAmount: "300", currency: "EUR", paidInvoicesRequired: 2 }),
         findUnique: resolved({ id: "rule-1", paidInvoicesRequired: 2 }),
       },
-      withUserContext: jest.fn<any>().mockImplementation(
-        (_user: AuthenticatedUser, callback: (tx: any) => unknown) => callback(prisma),
-      ),
+      withUserContext: jest.fn<any>().mockImplementation((_user: AuthenticatedUser, callback: (tx: any) => unknown) => callback(prisma)),
     };
     service = new ReferralsService(prisma);
   });
@@ -130,19 +121,9 @@ describe("ReferralsService", () => {
   });
 
   it("FR-REF-01: requires two paid invoices and a passed trial before payable", async () => {
-    await expect(
-      service.markRewardPayable(
-        "reward-1",
-        { paidInvoicesCount: 1, trialPassed: true },
-        finance,
-      ),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.markRewardPayable("reward-1", { paidInvoicesCount: 1, trialPassed: true }, finance)).rejects.toThrow(BadRequestException);
 
-    await service.markRewardPayable(
-      "reward-1",
-      { paidInvoicesCount: 2, trialPassed: true },
-      finance,
-    );
+    await service.markRewardPayable("reward-1", { paidInvoicesCount: 2, trialPassed: true }, finance);
     expect(prisma.referralRewards.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: RewardStatus.payable }),
@@ -179,10 +160,13 @@ describe("ReferralsService", () => {
 
   it("denies referral access to unauthorized roles", async () => {
     await expect(
-      service.findAll({ page: 1, pageSize: 25 }, {
-        ...sales,
-        role: UserRole.talent,
-      }),
+      service.findAll(
+        { page: 1, pageSize: 25 },
+        {
+          ...sales,
+          role: UserRole.talent,
+        },
+      ),
     ).rejects.toThrow(ForbiddenException);
   });
 
