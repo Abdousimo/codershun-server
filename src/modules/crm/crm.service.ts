@@ -885,6 +885,20 @@ export class CrmService {
       throw new NotFoundException("Company not found");
     }
 
+    const billingContact = (await this.prisma.contacts.findFirst({
+      where: { companyId, isBillingContact: true },
+      orderBy: { createdAt: "desc" },
+    })) || (await this.prisma.contacts.findFirst({
+      where: { companyId },
+      orderBy: { createdAt: "desc" },
+    }));
+
+    const userPhone = currentUser.id
+      ? (await this.prisma.users.findUnique({ where: { id: currentUser.id }, select: { phone: true } }))?.phone
+      : null;
+
+    const phone = billingContact?.phone || userPhone || null;
+
     return {
       id: company.id,
       name: company.name,
@@ -892,6 +906,8 @@ export class CrmService {
       industry: company.industry,
       website: company.website,
       vatNumber: company.vatNumber,
+      taxId: company.vatNumber,
+      phone,
       billingAddress: company.billingAddress,
       billingCity: company.billingCity,
       billingPostalCode: company.billingPostalCode,
@@ -966,6 +982,41 @@ export class CrmService {
       }),
     );
 
+    let savedPhone: string | null = null;
+    if (dto.phone !== undefined) {
+      savedPhone = dto.phone || null;
+      try {
+        const contact = await this.prisma.contacts.findFirst({
+          where: { companyId },
+          orderBy: [{ isBillingContact: "desc" }, { createdAt: "desc" }],
+        });
+        if (contact) {
+          await this.prisma.contacts.update({
+            where: { id: contact.id },
+            data: { phone: dto.phone },
+          });
+        } else {
+          await this.prisma.contacts.create({
+            data: {
+              companyId,
+              firstName: updated.legalName || updated.name,
+              phone: dto.phone,
+              email: updated.billingEmail,
+              isBillingContact: true,
+            },
+          });
+        }
+        if (currentUser.id) {
+          await this.prisma.users.update({
+            where: { id: currentUser.id },
+            data: { phone: dto.phone },
+          });
+        }
+      } catch {
+        // Continue gracefully if contact update fails
+      }
+    }
+
     return {
       message: "Company profile updated successfully",
       company: {
@@ -974,6 +1025,7 @@ export class CrmService {
         legalName: updated.legalName,
         vatNumber: updated.vatNumber,
         taxId: updated.vatNumber,
+        phone: savedPhone,
         website: updated.website,
         billingEmail: updated.billingEmail,
         billingAddress: updated.billingAddress,

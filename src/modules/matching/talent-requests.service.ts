@@ -8,6 +8,7 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import {
+  EngagementModel,
   InvoiceStatus,
   Prisma,
   RequestStatus,

@@ -331,7 +331,6 @@ export class TimesheetsService {
       where: {
         companyId,
         ...(placementIdParam && { id: placementIdParam }),
-        deletedAt: null,
       },
       select: {
         id: true,
