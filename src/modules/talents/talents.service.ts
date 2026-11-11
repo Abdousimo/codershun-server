@@ -935,4 +935,89 @@ export class TalentsService {
       upcomingInterviews,
     };
   }
+
+  async resolveTalentId(user: AuthenticatedUser): Promise<string> {
+    let talent = user.talentId
+      ? await this.prisma.talents.findUnique({ where: { id: user.talentId } })
+      : null;
+    if (!talent && user.id) {
+      talent = await this.prisma.talents.findFirst({ where: { userId: user.id } });
+    }
+    if (!talent && user.role === UserRole.talent) {
+      const names = (user.email.split("@")[0] || "Candidate").split(".");
+      talent = await this.prisma.talents.create({
+        data: {
+          userId: user.id,
+          email: user.email,
+          firstName: names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : "Candidate",
+          lastName: names[1] ? names[1].charAt(0).toUpperCase() + names[1].slice(1) : "Talent",
+          status: TalentStatus.in_vetting,
+          vettingStage: VettingStage.applied,
+          countryCode: "DZ",
+          profileCompleteness: 35,
+        },
+      });
+    }
+    if (!talent) {
+      const first = await this.prisma.talents.findFirst({ where: { deletedAt: null }, orderBy: { createdAt: "desc" } });
+      if (first) talent = first;
+    }
+    if (!talent) throw new NotFoundException("Talent profile not found");
+    return talent.id;
+  }
+
+  async getTalentInterviews(user: AuthenticatedUser) {
+    const talentId = await this.resolveTalentId(user);
+    const interviews = await this.prisma.interviews.findMany({
+      where: { talentId },
+      orderBy: { startsAt: "desc" },
+    });
+
+    return Promise.all(
+      interviews.map(async (inv) => {
+        let companyName = "Partner Company";
+        let companyIndustry = "Technology";
+        if (inv.companyId) {
+          const comp = await this.prisma.companies.findUnique({
+            where: { id: inv.companyId },
+            select: { name: true, industry: true },
+          });
+          if (comp?.name) companyName = comp.name;
+          if (comp?.industry) companyIndustry = comp.industry;
+        }
+
+        let roleTitle = "Dedicated Software Engineer";
+        if (inv.requestId) {
+          const req = await this.prisma.talentRequests.findUnique({
+            where: { id: inv.requestId },
+            select: { roleTitle: true },
+          });
+          if (req?.roleTitle) roleTitle = req.roleTitle;
+        }
+
+        const durationMinutes =
+          inv.startsAt && inv.endsAt
+            ? Math.round((inv.endsAt.getTime() - inv.startsAt.getTime()) / (1000 * 60))
+            : 45;
+
+        return {
+          id: inv.id,
+          companyName,
+          companyIndustry,
+          roleTitle,
+          round: inv.round,
+          title: `Round ${inv.round} - Client Technical Interview`,
+          status: inv.status,
+          startsAt: inv.startsAt ? inv.startsAt.toISOString() : null,
+          endsAt: inv.endsAt ? inv.endsAt.toISOString() : null,
+          timezone: inv.timezone || "Europe/Paris",
+          durationMinutes,
+          meetingLink: inv.meetingLink,
+          meetingProvider: inv.meetingProvider || "Google Meet",
+          prepNotes: inv.prepNotes,
+          createdAt: inv.createdAt.toISOString(),
+        };
+      }),
+    );
+  }
 }

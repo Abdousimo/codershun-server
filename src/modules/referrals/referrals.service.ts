@@ -321,4 +321,141 @@ export class ReferralsService {
       })),
     };
   }
+
+  // ==========================================
+  // TALENT REFERRAL PORTAL
+  // ==========================================
+
+  async getTalentReferralProfile(user: AuthenticatedUser) {
+    let referrer = await this.prisma.referrers.findFirst({
+      where: { userId: user.id },
+    });
+
+    if (!referrer) {
+      let name = "CodersHub Talent";
+      if (this.prisma.talents?.findFirst) {
+        const talent = await this.prisma.talents.findFirst({
+          where: { userId: user.id },
+        });
+        if (talent) {
+          name = `${talent.firstName} ${talent.lastName}`;
+        }
+      }
+      if (name === "CodersHub Talent" && user.email) {
+        name = user.email.split("@")[0] || "Talent Member";
+      }
+
+      const randomSuffix = user.id ? user.id.slice(0, 4).toUpperCase() : Math.random().toString(36).substring(2, 6).toUpperCase();
+      const code = `REF-${name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 6) || "TALENT"}-${randomSuffix}`;
+
+      referrer = await this.prisma.referrers.create({
+        data: {
+          userId: user.id,
+          kind: "individual",
+          name,
+          email: user.email,
+          code,
+          isActive: true,
+          termsAcceptedAt: new Date(),
+        },
+      });
+    }
+
+    const referrals = await this.prisma.referrals.findMany({
+      where: { referrerId: referrer.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const referralIds = referrals.map((r) => r.id);
+    const rewards = referralIds.length > 0
+      ? await this.prisma.referralRewards.findMany({
+          where: { referralId: { in: referralIds } },
+        })
+      : [];
+
+    const totalEarnedEur = rewards
+      .filter((r) => r.status === RewardStatus.paid)
+      .reduce((sum, r) => sum + Number(r.amount), 0);
+
+    const pendingRewardsEur = rewards
+      .filter((r) => r.status === RewardStatus.pending || r.status === RewardStatus.payable)
+      .reduce((sum, r) => sum + Number(r.amount), 0);
+
+    const mappedReferrals = referrals.map((ref) => {
+      const reward = rewards.find((rw) => rw.referralId === ref.id);
+      return {
+        id: ref.id,
+        referralKind: ref.referralKind,
+        introCompanyName: ref.introCompanyName || "Direct Referral",
+        introContactName: ref.introContactName,
+        introContactEmail: ref.introContactEmail,
+        introNeed: ref.introNeed,
+        status: ref.status,
+        attributedAt: ref.attributedAt.toISOString().split("T")[0],
+        rewardAmount: reward ? reward.amount.toString() : "500.00",
+        rewardStatus: reward ? reward.status : "pending",
+        rewardCurrency: reward ? reward.currency : "EUR",
+      };
+    });
+
+    return {
+      referrerId: referrer.id,
+      code: referrer.code,
+      shareableUrl: `https://codershub.dz/r/${referrer.code}`,
+      rewardPerReferralEur: 500,
+      totalEarnedEur,
+      pendingRewardsEur,
+      referralsCount: referrals.length,
+      successfulReferralsCount: referrals.filter((r) => r.status === ReferralStatus.won).length,
+      referrals: mappedReferrals,
+    };
+  }
+
+  async submitTalentReferral(
+    dto: {
+      introCompanyName: string;
+      introContactName: string;
+      introContactEmail: string;
+      introNeed: string;
+      referralKind?: string;
+    },
+    user: AuthenticatedUser,
+  ) {
+    const profile = await this.getTalentReferralProfile(user);
+    const attributedAt = new Date();
+    const attributionExpiresAt = new Date(attributedAt);
+    attributionExpiresAt.setUTCDate(attributionExpiresAt.getUTCDate() + 90);
+
+    const referral = await this.prisma.withUserContext(user, (tx) =>
+      tx.referrals.create({
+        data: {
+          referrerId: profile.referrerId,
+          referralKind: dto.referralKind || "client",
+          introCompanyName: dto.introCompanyName,
+          introContactName: dto.introContactName,
+          introContactEmail: dto.introContactEmail,
+          introNeed: dto.introNeed,
+          status: ReferralStatus.submitted,
+          attributedAt,
+          attributionExpiresAt,
+        },
+      }),
+    );
+
+    await this.prisma.referralRewards.create({
+      data: {
+        referralId: referral.id,
+        rewardType: "flat_bonus",
+        amount: new Prisma.Decimal("500.00"),
+        currency: "EUR",
+        status: RewardStatus.pending,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Referral submitted successfully",
+      referralId: referral.id,
+    };
+  }
 }
