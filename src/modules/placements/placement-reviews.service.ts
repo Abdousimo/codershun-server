@@ -96,7 +96,7 @@ export class PlacementReviewsService {
           budgetCurrency: placement.currency,
           status: RequestStatus.open,
           replacesPlacementId: placement.id,
-          description: `Automatic replacement request from trial end (${dto.reason || "Trial ended with replace"}).`,
+          description: `Automatic replacement request from trial end (${dto.reason || dto.feedback || "Trial ended with replace"}).`,
           createdBy: currentUser.id,
         },
       });
@@ -118,7 +118,7 @@ export class PlacementReviewsService {
           status: PlacementStatus.ended_in_trial,
           trialDecision: "replace",
           trialDecisionAt: now,
-          endReason: dto.reason || "Ended in trial - replace",
+          endReason: dto.reason || dto.feedback || "Ended in trial - replace",
           endDate: now,
           replacedByPlacementId: null, // Will be linked when replacement placement is created
           isFreeReplacement,
@@ -167,7 +167,7 @@ export class PlacementReviewsService {
           noticeGivenBy: dto.noticeParty,
           noticePeriodDays,
           noticeEndDate,
-          endReason: dto.endReason,
+          endReason: dto.endReason || dto.reason,
         },
       });
     });

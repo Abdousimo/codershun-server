@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
@@ -27,6 +27,15 @@ import {
 export class PublicHireRequestDto {
   // Step 1: Need
   @ApiProperty({ enum: EngagementModel, example: EngagementModel.dedicated_developer })
+  @Transform(({ value }) => {
+    if (!value) return EngagementModel.dedicated_developer;
+    if (value === "dedicated" || value === "dedicated_developer") return EngagementModel.dedicated_developer;
+    if (value === "time_material" || value === "time_and_materials" || value === "hourly" || value === "time_and_material") return EngagementModel.time_material;
+    if (value === "team_extension") return EngagementModel.team_extension;
+    if (value === "dedicated_team") return EngagementModel.dedicated_team;
+    if (value === "project_based" || value === "direct_hire") return EngagementModel.project_based;
+    return value;
+  })
   @IsEnum(EngagementModel)
   engagementModel!: EngagementModel;
 
@@ -54,6 +63,10 @@ export class PublicHireRequestDto {
 
   // Step 2: Profile
   @ApiPropertyOptional({ enum: SeniorityLevel, example: SeniorityLevel.senior })
+  @Transform(({ value }) => {
+    if (value === "principal") return SeniorityLevel.lead;
+    return value;
+  })
   @IsOptional()
   @IsEnum(SeniorityLevel)
   seniority?: SeniorityLevel;

@@ -12,7 +12,6 @@ export class ShortlistClientDecisionDto {
   @ValidateIf((o: ShortlistClientDecisionDto) => o.decision === ClientDecision.not_a_fit)
   @IsNotEmpty({ message: "clientDecisionReason is mandatory when marking a profile as not_a_fit" })
   @IsString()
-  @IsOptional()
   reason?: string;
 
   @ApiPropertyOptional({ description: "Optional feedback comment for the recruiter" })

@@ -137,17 +137,31 @@ export class PublicFormsService {
       });
 
       // e. Create Talent Request
+      let engagementModel = dto.engagementModel;
+      if (!engagementModel || (engagementModel as any) === "dedicated") {
+        engagementModel = EngagementModel.dedicated_developer;
+      } else if ((engagementModel as any) === "time_and_materials" || (engagementModel as any) === "hourly") {
+        engagementModel = EngagementModel.time_material;
+      } else if ((engagementModel as any) === "direct_hire") {
+        engagementModel = EngagementModel.project_based;
+      }
+
+      let seniority = dto.seniority;
+      if ((seniority as any) === "principal") {
+        seniority = SeniorityLevel.lead;
+      }
+
       const talentRequest = await tx.talentRequests.create({
         data: {
           companyId: company.id,
           contactId: contact.id,
           leadId: lead.id,
           sourceTalentId: dto.sourceTalentId,
-          engagementModel: dto.engagementModel,
+          engagementModel,
           categoryId: dto.categoryId,
           jobRoleId: dto.jobRoleId,
           roleTitle: dto.roleTitle,
-          seniority: dto.seniority,
+          seniority,
           talentsCount: dto.talentsCount ?? 1,
           timezoneOverlapHours: dto.timezoneOverlapHours,
           startWindow: dto.startWindow,

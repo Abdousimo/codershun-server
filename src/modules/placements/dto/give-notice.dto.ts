@@ -23,5 +23,10 @@ export class GiveNoticeDto {
   @IsString()
   @IsOptional()
   endReason?: string;
+
+  @ApiPropertyOptional({ description: "Alias for endReason" })
+  @IsString()
+  @IsOptional()
+  reason?: string;
 }
 
