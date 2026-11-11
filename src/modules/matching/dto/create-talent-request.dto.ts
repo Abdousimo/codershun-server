@@ -14,7 +14,7 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Type, Transform } from "class-transformer";
 import {
   DurationBucket,
   EngagementModel,
@@ -75,6 +75,15 @@ export class CreateTalentRequestDto {
   sourceTalentId?: string;
 
   @ApiProperty({ enum: EngagementModel, default: EngagementModel.dedicated_developer })
+  @Transform(({ value }) => {
+    if (!value) return EngagementModel.dedicated_developer;
+    if (value === "dedicated" || value === "dedicated_developer") return EngagementModel.dedicated_developer;
+    if (value === "time_material" || value === "time_and_materials" || value === "hourly" || value === "time_and_material") return EngagementModel.time_material;
+    if (value === "team_extension") return EngagementModel.team_extension;
+    if (value === "dedicated_team") return EngagementModel.dedicated_team;
+    if (value === "project_based" || value === "direct_hire") return EngagementModel.project_based;
+    return value;
+  })
   @IsEnum(EngagementModel)
   engagementModel: EngagementModel = EngagementModel.dedicated_developer;
 
@@ -94,6 +103,10 @@ export class CreateTalentRequestDto {
   roleTitle!: string;
 
   @ApiPropertyOptional({ enum: SeniorityLevel })
+  @Transform(({ value }) => {
+    if (value === "principal") return SeniorityLevel.lead;
+    return value;
+  })
   @IsEnum(SeniorityLevel)
   @IsOptional()
   seniority?: SeniorityLevel;

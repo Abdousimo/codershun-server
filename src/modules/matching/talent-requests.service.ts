@@ -192,6 +192,9 @@ export class TalentRequestsService {
       }
     }
 
+    const engagementModel = this.normalizeEngagementModel(dto.engagementModel);
+    const seniority = this.normalizeSeniority(dto.seniority);
+
     const created = await this.prisma.withUserContext(currentUser, async (tx) => {
       const request = await tx.talentRequests.create({
         data: {
@@ -199,11 +202,11 @@ export class TalentRequestsService {
           requestedByContactId: dto.requestedByContactId,
           leadId: dto.leadId,
           sourceTalentId: dto.sourceTalentId,
-          engagementModel: dto.engagementModel,
+          engagementModel,
           categoryId: dto.categoryId,
           jobRoleId: dto.jobRoleId,
           roleTitle: dto.roleTitle,
-          seniority: dto.seniority,
+          seniority,
           talentsCount: dto.talentsCount,
           timezoneOverlapHours: dto.timezoneOverlapHours,
           startWindow: dto.startWindow,
@@ -480,7 +483,8 @@ export class TalentRequestsService {
       const data: Prisma.TalentRequestsUpdateInput = {};
 
       if (dto.roleTitle !== undefined) data.roleTitle = dto.roleTitle;
-      if (dto.seniority !== undefined) data.seniority = dto.seniority;
+      if (dto.engagementModel !== undefined) data.engagementModel = this.normalizeEngagementModel(dto.engagementModel);
+      if (dto.seniority !== undefined) data.seniority = this.normalizeSeniority(dto.seniority);
       if (dto.talentsCount !== undefined) data.talentsCount = dto.talentsCount;
       if (dto.timezoneOverlapHours !== undefined) data.timezoneOverlapHours = dto.timezoneOverlapHours;
       if (dto.startWindow !== undefined) data.startWindow = dto.startWindow;
@@ -597,6 +601,22 @@ export class TalentRequestsService {
     });
 
     return this.findById(id, currentUser);
+  }
+
+  private normalizeEngagementModel(model?: any): EngagementModel {
+    if (!model) return EngagementModel.dedicated_developer;
+    if (model === "dedicated" || model === "dedicated_developer") return EngagementModel.dedicated_developer;
+    if (model === "time_material" || model === "time_and_materials" || model === "hourly" || model === "time_and_material") return EngagementModel.time_material;
+    if (model === "team_extension") return EngagementModel.team_extension;
+    if (model === "dedicated_team") return EngagementModel.dedicated_team;
+    if (model === "project_based" || model === "direct_hire") return EngagementModel.project_based;
+    return model as EngagementModel;
+  }
+
+  private normalizeSeniority(seniority?: any): SeniorityLevel | undefined {
+    if (!seniority) return undefined;
+    if (seniority === "principal") return SeniorityLevel.lead;
+    return seniority as SeniorityLevel;
   }
 }
 
