@@ -105,6 +105,15 @@ describe("TalentsService", () => {
           Promise.resolve({ id: "sc-score-1", ...args.data }),
         ),
       },
+      interviews: {
+        findMany: jest.fn<any>().mockResolvedValue([]),
+      },
+      companies: {
+        findUnique: jest.fn<any>().mockResolvedValue({ name: "Partner Corp", industry: "Fintech" }),
+      },
+      talentRequests: {
+        findUnique: jest.fn<any>().mockResolvedValue({ roleTitle: "Senior React Engineer" }),
+      },
       withUserContext: jest.fn<any>((user, fn) => fn(mockPrisma)),
     };
 
@@ -326,6 +335,55 @@ describe("TalentsService", () => {
           vettingScore: expect.any(Object),
         }),
       });
+    });
+  });
+
+  describe("getTalentInterviews", () => {
+    it("returns mapped client interviews for authenticated talent", async () => {
+      const talentUser: AuthenticatedUser = {
+        id: "user-talent-1",
+        email: "talent@example.com",
+        role: UserRole.talent,
+        companyId: null,
+        talentId: "talent-1",
+        sessionId: "sess-talent",
+      };
+
+      mockPrisma.talents.findUnique.mockResolvedValue({
+        id: "talent-1",
+        userId: "user-talent-1",
+      });
+
+      const startTime = new Date("2026-11-15T10:00:00Z");
+      const endTime = new Date("2026-11-15T10:45:00Z");
+
+      mockPrisma.interviews.findMany.mockResolvedValue([
+        {
+          id: "interview-1",
+          talentId: "talent-1",
+          companyId: "company-1",
+          requestId: "req-1",
+          round: 1,
+          status: "scheduled",
+          startsAt: startTime,
+          endsAt: endTime,
+          timezone: "Europe/Paris",
+          meetingLink: "https://meet.google.com/abc-defg-hij",
+          meetingProvider: "Google Meet",
+          prepNotes: "Focus on React state management",
+          createdAt: new Date(),
+        },
+      ]);
+
+      const result = await service.getTalentInterviews(talentUser);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe("interview-1");
+      expect(result[0].companyName).toBe("Partner Corp");
+      expect(result[0].roleTitle).toBe("Senior React Engineer");
+      expect(result[0].durationMinutes).toBe(45);
+      expect(result[0].status).toBe("scheduled");
+      expect(result[0].meetingLink).toBe("https://meet.google.com/abc-defg-hij");
     });
   });
 });

@@ -23,3 +23,4 @@ export class TalentInterviewsController {
     return this.talentsService.getTalentInterviews(currentUser);
   }
 }
+

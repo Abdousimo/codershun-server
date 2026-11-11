@@ -34,3 +34,4 @@ export class TalentReferralsController {
     return this.referralsService.submitTalentReferral(dto, currentUser);
   }
 }
+

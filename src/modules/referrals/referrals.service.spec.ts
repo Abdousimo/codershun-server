@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { BadRequestException, ForbiddenException, UnprocessableEntityException } from "@nestjs/common";
 import {
   PaymentMethod,
+  Prisma,
   ReferralStatus,
   RewardStatus,
   RewardType,
@@ -58,7 +59,11 @@ describe("ReferralsService", () => {
 
   beforeEach(() => {
     prisma = {
-      referrers: { findUnique: resolved({ id: "referrer-1", isActive: true, companyId: "other-company" }) },
+      referrers: {
+        findUnique: resolved({ id: "referrer-1", isActive: true, companyId: "other-company" }),
+        findFirst: resolved({ id: "referrer-1", code: "REF-TEST-001", isActive: true }),
+        create: resolved({ id: "referrer-1", code: "REF-TEST-001", isActive: true }),
+      },
       referrals: {
         create: resolved(referral),
         findUnique: resolved(referral),
@@ -179,5 +184,84 @@ describe("ReferralsService", () => {
         role: UserRole.talent,
       }),
     ).rejects.toThrow(ForbiddenException);
+  });
+
+  describe("Talent Referral Portal", () => {
+    const talentUser: AuthenticatedUser = {
+      id: "talent-user-1",
+      email: "talent@example.com",
+      role: UserRole.talent,
+    };
+
+    it("returns referral profile, shareable URL, and reward ledger for talent", async () => {
+      prisma.referrals.findMany = resolved([
+        {
+          id: "ref-1",
+          referrerId: "referrer-1",
+          referralKind: "client",
+          introCompanyName: "Fintech Hub",
+          introContactName: "Alexandre",
+          introContactEmail: "alex@fintech.test",
+          introNeed: "Senior backend developer",
+          status: ReferralStatus.won,
+          attributedAt: new Date("2026-11-01T00:00:00Z"),
+        },
+      ]);
+
+      prisma.referralRewards.findMany = resolved([
+        {
+          id: "rw-1",
+          referralId: "ref-1",
+          amount: new Prisma.Decimal("500.00"),
+          currency: "EUR",
+          status: RewardStatus.paid,
+        },
+      ]);
+
+      const profile = await service.getTalentReferralProfile(talentUser);
+
+      expect(profile.referrerId).toBe("referrer-1");
+      expect(profile.code).toBe("REF-TEST-001");
+      expect(profile.shareableUrl).toBe("https://codershub.dz/r/REF-TEST-001");
+      expect(profile.rewardPerReferralEur).toBe(500);
+      expect(profile.totalEarnedEur).toBe(500);
+      expect(profile.referralsCount).toBe(1);
+      expect(profile.successfulReferralsCount).toBe(1);
+      expect(profile.referrals[0].introCompanyName).toBe("Fintech Hub");
+    });
+
+    it("allows talent to submit a referral and initializes a pending reward", async () => {
+      const result = await service.submitTalentReferral(
+        {
+          introCompanyName: "Startup Alpha",
+          introContactName: "John Founder",
+          introContactEmail: "john@alpha.test",
+          introNeed: "Looking for 2 React devs",
+          referralKind: "client",
+        },
+        talentUser,
+      );
+
+      expect(result.success).toBe(true);
+      expect(prisma.referrals.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            referrerId: "referrer-1",
+            introCompanyName: "Startup Alpha",
+            introContactEmail: "john@alpha.test",
+            status: ReferralStatus.submitted,
+          }),
+        }),
+      );
+      expect(prisma.referralRewards.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            rewardType: "flat_bonus",
+            currency: "EUR",
+            status: RewardStatus.pending,
+          }),
+        }),
+      );
+    });
   });
 });
