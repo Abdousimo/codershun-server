@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:views": "tsx scripts/ensure-views.ts",
-    "db:test:reset": "tsx scripts/test-db-reset.ts"
+    "db:test:reset": "tsx scripts/test-db-reset.ts",
+    "db:clean": "tsx scripts/clean-test-data.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.27",
