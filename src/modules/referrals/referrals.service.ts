@@ -11,6 +11,7 @@ import {
   ReferralStatus,
   ReferrerKind,
   RewardStatus,
+  RewardType,
   UserRole,
 } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -450,10 +451,15 @@ export class ReferralsService {
       }),
     );
 
+    const rewardType =
+      dto.referralKind === "talent"
+        ? RewardType.talent_referral
+        : RewardType.monthly_plan;
+
     await this.prisma.referralRewards.create({
       data: {
         referralId: referral.id,
-        rewardType: "flat_bonus",
+        rewardType,
         amount: new Prisma.Decimal("500.00"),
         currency: "EUR",
         status: RewardStatus.pending,

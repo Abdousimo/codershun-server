@@ -256,7 +256,7 @@ describe("ReferralsService", () => {
       expect(prisma.referralRewards.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            rewardType: "flat_bonus",
+            rewardType: RewardType.monthly_plan,
             currency: "EUR",
             status: RewardStatus.pending,
           }),
