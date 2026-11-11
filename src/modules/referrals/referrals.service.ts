@@ -9,6 +9,7 @@ import {
 import {
   Prisma,
   ReferralStatus,
+  ReferrerKind,
   RewardStatus,
   UserRole,
 } from "../../generated/prisma/client";
@@ -348,10 +349,17 @@ export class ReferralsService {
       const randomSuffix = user.id ? user.id.slice(0, 4).toUpperCase() : Math.random().toString(36).substring(2, 6).toUpperCase();
       const code = `REF-${name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 6) || "TALENT"}-${randomSuffix}`;
 
+      const kind =
+        user.role === UserRole.talent
+          ? ReferrerKind.talent
+          : user.role === UserRole.client_admin || user.role === UserRole.client_user
+            ? ReferrerKind.client
+            : ReferrerKind.external;
+
       referrer = await this.prisma.referrers.create({
         data: {
           userId: user.id,
-          kind: "individual",
+          kind,
           name,
           email: user.email,
           code,
