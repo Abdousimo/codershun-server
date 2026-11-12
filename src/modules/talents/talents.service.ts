@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, Optional } from "@nestjs/common";
 
 import {
   Prisma,
@@ -11,6 +11,8 @@ import {
   VettingStepType,
 } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
+import { FilesService } from "../files/files.service";
+import { FileCategory } from "../files/dto/upload-file.dto";
 import type { AuthenticatedUser } from "../../common/types/authenticated-user";
 import { toDecimal } from "../../common/utils/money";
 import { QueryShowcaseDto, QueryTalentsDto } from "./dto/query-talents.dto";
@@ -30,7 +32,10 @@ import { TalentAdminResponseDto, TalentShowcaseResponseDto } from "./dto/talent-
 export class TalentsService {
   private readonly logger = new Logger(TalentsService.name);
 
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Optional() @Inject(FilesService) private readonly filesService?: FilesService,
+  ) {}
 
   // ==========================================
   // CANDIDATE PROFILE CRUD & ATS
@@ -1019,5 +1024,90 @@ export class TalentsService {
         };
       }),
     );
+  }
+
+  async submitTalentApplicationFromDashboard(
+    currentUser: AuthenticatedUser,
+    dto: {
+      headline?: string;
+      seniority?: SeniorityLevel;
+      yearsExperience?: string;
+      expectedNetPay?: string;
+      phone?: string;
+      city?: string;
+      linkedinUrl?: string;
+      githubUrl?: string;
+      skills?: string[];
+    },
+    cvFile?: { originalname: string; mimetype: string; size: number; buffer: Buffer },
+  ) {
+    let talent = null;
+    if (currentUser.talentId) {
+      talent = await this.prisma.talents.findUnique({
+        where: { id: currentUser.talentId },
+      });
+    }
+    if (!talent && currentUser.id) {
+      talent = await this.prisma.talents.findFirst({
+        where: { userId: currentUser.id },
+      });
+    }
+
+    if (!talent) {
+      const names = (currentUser.email.split("@")[0] || "Candidate").split(".");
+      talent = await this.prisma.talents.create({
+        data: {
+          userId: currentUser.id,
+          email: currentUser.email,
+          firstName: names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : "Candidate",
+          lastName: names[1] ? names[1].charAt(0).toUpperCase() + names[1].slice(1) : "Talent",
+          status: TalentStatus.active,
+          vettingStage: VettingStage.applied,
+          countryCode: "DZ",
+        },
+      });
+    }
+
+    let attachedFileId: string | undefined = undefined;
+    if (cvFile && this.filesService) {
+      const fileRecord = await this.filesService.uploadFile(cvFile, FileCategory.CV, currentUser);
+      attachedFileId = fileRecord.id;
+    }
+
+    return this.prisma.withUserContext(currentUser, async (tx) => {
+      const updated = await tx.talents.update({
+        where: { id: talent.id },
+        data: {
+          ...(dto.headline && { headline: dto.headline }),
+          ...(dto.seniority && { seniority: dto.seniority }),
+          ...(dto.yearsExperience && { yearsExperience: toDecimal(dto.yearsExperience) }),
+          ...(dto.expectedNetPay && { expectedPay: toDecimal(dto.expectedNetPay) }),
+          ...(dto.phone && { phone: dto.phone }),
+          ...(dto.city && { city: dto.city }),
+          ...(dto.linkedinUrl && { linkedinUrl: dto.linkedinUrl }),
+          ...(dto.githubUrl && { githubUrl: dto.githubUrl }),
+          ...(attachedFileId && { cvFileId: attachedFileId }),
+          vettingStage: VettingStage.applied,
+          status: TalentStatus.active,
+          updatedAt: new Date(),
+        },
+      });
+
+      const existingStep = await tx.vettingSteps.findFirst({
+        where: { talentId: talent.id, type: VettingStepType.cv_screening },
+      });
+      if (!existingStep) {
+        await tx.vettingSteps.create({
+          data: {
+            talentId: talent.id,
+            type: VettingStepType.cv_screening,
+            status: VettingStepStatus.in_progress,
+            createdBy: currentUser.id,
+          },
+        });
+      }
+
+      return updated;
+    });
   }
 }
