@@ -63,3 +63,4 @@ export class SubmitTalentApplicationDto {
   })
   skills?: string[];
 }
+
