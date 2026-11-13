@@ -1111,12 +1111,18 @@ export class TalentsService {
       }
 
       // Link skills if provided
-      if (dto.skills && dto.skills.length > 0) {
-        const skillSlugs = dto.skills.map((s) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+      const submittedSkills =
+        typeof dto.skills === "string"
+          ? dto.skills.split(",").map((skill) => skill.trim()).filter(Boolean)
+          : Array.isArray(dto.skills)
+            ? dto.skills
+            : [];
+      if (submittedSkills.length > 0) {
+        const skillSlugs = submittedSkills.map((s) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"));
         const matchedSkills = await tx.skills.findMany({
           where: {
             OR: [
-              { name: { in: dto.skills, mode: "insensitive" } },
+              { name: { in: submittedSkills, mode: "insensitive" } },
               { slug: { in: skillSlugs } },
             ],
           },
