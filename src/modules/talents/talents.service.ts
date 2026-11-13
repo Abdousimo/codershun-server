@@ -1111,11 +1111,12 @@ export class TalentsService {
       }
 
       // Link skills if provided
-      const submittedSkills =
-        typeof dto.skills === "string"
-          ? dto.skills.split(",").map((skill) => skill.trim()).filter(Boolean)
-          : Array.isArray(dto.skills)
-            ? dto.skills
+      const rawSkills: unknown = dto.skills;
+      const submittedSkills: string[] =
+        typeof rawSkills === "string"
+          ? rawSkills.split(",").map((skill: string) => skill.trim()).filter(Boolean)
+          : Array.isArray(rawSkills)
+            ? rawSkills.filter((skill): skill is string => typeof skill === "string")
             : [];
       if (submittedSkills.length > 0) {
         const skillSlugs = submittedSkills.map((s) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"));
