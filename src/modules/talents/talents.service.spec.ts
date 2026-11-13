@@ -2,6 +2,7 @@ import { describe, expect, it, jest, beforeEach } from "@jest/globals";
 import { BadRequestException } from "@nestjs/common";
 
 import {
+  DocumentType,
   Prisma,
   Recommendation,
   RejectCategory,
@@ -62,6 +63,13 @@ describe("TalentsService", () => {
       },
       talentSkills: {
         findMany: jest.fn<any>().mockResolvedValue([]),
+        upsert: jest.fn<any>().mockResolvedValue({}),
+      },
+      skills: {
+        findMany: jest.fn<any>().mockResolvedValue([]),
+      },
+      users: {
+        findUnique: jest.fn<any>().mockResolvedValue(null),
       },
       talentLanguages: {
         findMany: jest.fn<any>().mockResolvedValue([]),
@@ -86,6 +94,9 @@ describe("TalentsService", () => {
       },
       talentDocuments: {
         findMany: jest.fn<any>().mockResolvedValue([]),
+        create: jest.fn<any>().mockImplementation((args: any) =>
+          Promise.resolve({ id: "doc-1", ...args.data }),
+        ),
       },
       vettingSteps: {
         findMany: jest.fn<any>().mockResolvedValue([]),
@@ -384,6 +395,94 @@ describe("TalentsService", () => {
       expect(result[0].durationMinutes).toBe(45);
       expect(result[0].status).toBe("scheduled");
       expect(result[0].meetingLink).toBe("https://meet.google.com/abc-defg-hij");
+    });
+  });
+
+  describe("submitTalentApplicationFromDashboard", () => {
+    it("submits application and CV, sets status to in_vetting and creates cv_screening step", async () => {
+      const talentUser: AuthenticatedUser = {
+        id: "user-app-1",
+        email: "candidate@codershub.dz",
+        role: UserRole.talent,
+        companyId: null,
+        talentId: "talent-app-1",
+        sessionId: "sess-1",
+      };
+
+      const existingTalent = {
+        id: "talent-app-1",
+        userId: "user-app-1",
+        email: "candidate@codershub.dz",
+        firstName: "Amine",
+        lastName: "Ben",
+        status: TalentStatus.in_vetting,
+        vettingStage: VettingStage.applied,
+      };
+
+      mockPrisma.talents.findUnique.mockResolvedValue(existingTalent);
+
+      const updatedRecord = {
+        ...existingTalent,
+        headline: "Lead Full-Stack Engineer",
+        seniority: SeniorityLevel.lead,
+        yearsExperience: new Prisma.Decimal("7.0"),
+        expectedPay: new Prisma.Decimal("2500.00"),
+        payCurrency: "EUR",
+        phone: "+213555987654",
+        city: "Oran",
+        countryCode: "DZ",
+        linkedinUrl: "https://linkedin.com/in/amine",
+        githubUrl: "https://github.com/amine",
+        updatedAt: new Date(),
+      };
+
+      mockPrisma.talents.update.mockResolvedValue(updatedRecord);
+      mockPrisma.skills.findMany.mockResolvedValue([{ id: "skill-react", name: "React", slug: "react" }]);
+      mockPrisma.talentSkills.upsert.mockResolvedValue({});
+      mockPrisma.vettingSteps.findFirst.mockResolvedValue(null);
+      mockPrisma.vettingSteps.create.mockResolvedValue({});
+
+      const mockFilesService = {
+        uploadFile: jest.fn().mockResolvedValue({ id: "file-cv-1" }),
+      };
+
+      const customService = new TalentsService(mockPrisma as any, mockFilesService as any);
+
+      const result = await customService.submitTalentApplicationFromDashboard(
+        talentUser,
+        {
+          headline: "Lead Full-Stack Engineer",
+          seniority: SeniorityLevel.lead,
+          yearsExperience: "7",
+          expectedNetPay: "2500",
+          phone: "+213555987654",
+          city: "Oran",
+          skills: ["React"],
+          linkedinUrl: "https://linkedin.com/in/amine",
+          githubUrl: "https://github.com/amine",
+        },
+        {
+          originalname: "resume.pdf",
+          mimetype: "application/pdf",
+          size: 1024,
+          buffer: Buffer.from("cv"),
+        },
+      );
+
+      expect(mockFilesService.uploadFile).toHaveBeenCalled();
+      expect(result.status).toBe(TalentStatus.in_vetting);
+      expect(result.vettingStage).toBe(VettingStage.applied);
+      expect(result.cvFileId).toBe("file-cv-1");
+      expect(result.headline).toBe("Lead Full-Stack Engineer");
+      expect(mockPrisma.talentDocuments.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            talentId: "talent-app-1",
+            fileId: "file-cv-1",
+            type: DocumentType.cv,
+          }),
+        }),
+      );
     });
   });
 });

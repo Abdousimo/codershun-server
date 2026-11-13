@@ -1,9 +1,11 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException, Optional } from "@nestjs/common";
 
 import {
+  DocumentType,
   Prisma,
   Recommendation,
   SeniorityLevel,
+  SkillLevel,
   TalentStatus,
   UserRole,
   VettingStage,
@@ -27,6 +29,7 @@ import {
 import { CreateScorecardDto } from "./dto/scorecard.dto";
 import { CreateCertificationDto, CreateEducationDto, CreateExperienceDto, CreatePortfolioDto } from "./dto/experience-education.dto";
 import { TalentAdminResponseDto, TalentShowcaseResponseDto } from "./dto/talent-response.dto";
+import { SubmitTalentApplicationDto } from "./dto/submit-talent-application.dto";
 
 @Injectable()
 export class TalentsService {
@@ -1028,17 +1031,7 @@ export class TalentsService {
 
   async submitTalentApplicationFromDashboard(
     currentUser: AuthenticatedUser,
-    dto: {
-      headline?: string;
-      seniority?: SeniorityLevel;
-      yearsExperience?: string;
-      expectedNetPay?: string;
-      phone?: string;
-      city?: string;
-      linkedinUrl?: string;
-      githubUrl?: string;
-      skills?: string[];
-    },
+    dto: SubmitTalentApplicationDto,
     cvFile?: { originalname: string; mimetype: string; size: number; buffer: Buffer },
   ) {
     let talent = null;
@@ -1054,14 +1047,26 @@ export class TalentsService {
     }
 
     if (!talent) {
-      const names = (currentUser.email.split("@")[0] || "Candidate").split(".");
+      const user = currentUser.id
+        ? await this.prisma.users.findUnique({ where: { id: currentUser.id } })
+        : null;
+
+      let firstName = user?.firstName || "";
+      let lastName = user?.lastName || "";
+      if (!firstName && !lastName) {
+        const emailPrefix = currentUser.email.split("@")[0] || "Candidate";
+        const parts = emailPrefix.split(".");
+        firstName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "Candidate";
+        lastName = parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : "Talent";
+      }
+
       talent = await this.prisma.talents.create({
         data: {
           userId: currentUser.id,
           email: currentUser.email,
-          firstName: names[0] ? names[0].charAt(0).toUpperCase() + names[0].slice(1) : "Candidate",
-          lastName: names[1] ? names[1].charAt(0).toUpperCase() + names[1].slice(1) : "Talent",
-          status: TalentStatus.active,
+          firstName,
+          lastName,
+          status: TalentStatus.in_vetting,
           vettingStage: VettingStage.applied,
           countryCode: "DZ",
         },
@@ -1086,13 +1091,56 @@ export class TalentsService {
           ...(dto.city && { city: dto.city }),
           ...(dto.linkedinUrl && { linkedinUrl: dto.linkedinUrl }),
           ...(dto.githubUrl && { githubUrl: dto.githubUrl }),
-          ...(attachedFileId && { cvFileId: attachedFileId }),
           vettingStage: VettingStage.applied,
-          status: TalentStatus.active,
+          status: TalentStatus.in_vetting,
           updatedAt: new Date(),
         },
       });
 
+      // Attach CV in talent_documents
+      if (attachedFileId) {
+        await tx.talentDocuments.create({
+          data: {
+            talentId: talent.id,
+            fileId: attachedFileId,
+            type: DocumentType.cv,
+            label: "Candidate Resume",
+            isCurrent: true,
+          },
+        });
+      }
+
+      // Link skills if provided
+      if (dto.skills && dto.skills.length > 0) {
+        const skillSlugs = dto.skills.map((s) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+        const matchedSkills = await tx.skills.findMany({
+          where: {
+            OR: [
+              { name: { in: dto.skills, mode: "insensitive" } },
+              { slug: { in: skillSlugs } },
+            ],
+          },
+        });
+
+        for (const skill of matchedSkills) {
+          await tx.talentSkills.upsert({
+            where: {
+              talentId_skillId: {
+                talentId: talent.id,
+                skillId: skill.id,
+              },
+            },
+            create: {
+              talentId: talent.id,
+              skillId: skill.id,
+              level: SkillLevel.intermediate,
+            },
+            update: {},
+          });
+        }
+      }
+
+      // Ensure cv_screening vetting step is recorded
       const existingStep = await tx.vettingSteps.findFirst({
         where: { talentId: talent.id, type: VettingStepType.cv_screening },
       });
@@ -1107,7 +1155,27 @@ export class TalentsService {
         });
       }
 
-      return updated;
+      // Return sanitized response object (leaks no internal Prisma fields)
+      return {
+        id: updated.id,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        email: updated.email,
+        phone: updated.phone,
+        city: updated.city,
+        countryCode: updated.countryCode,
+        headline: updated.headline,
+        seniority: updated.seniority,
+        yearsExperience: updated.yearsExperience?.toString() ?? null,
+        expectedPay: updated.expectedPay?.toString() ?? null,
+        payCurrency: updated.payCurrency,
+        vettingStage: updated.vettingStage,
+        status: updated.status,
+        cvFileId: attachedFileId ?? null,
+        linkedinUrl: updated.linkedinUrl,
+        githubUrl: updated.githubUrl,
+        updatedAt: updated.updatedAt.toISOString(),
+      };
     });
   }
 }

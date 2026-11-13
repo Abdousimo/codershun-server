@@ -17,6 +17,8 @@ import { Roles } from "../../../common/decorators/roles.decorator";
 import { CurrentUser } from "../../../common/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "../../../common/types/authenticated-user";
 import { TalentsService } from "../talents.service";
+import { SubmitTalentApplicationDto } from "../dto/submit-talent-application.dto";
+import type { UploadedMulterFile } from "../../files/files.controller";
 
 @ApiTags("Talent / Dashboard")
 @ApiBearerAuth()
@@ -40,11 +42,12 @@ export class TalentDashboardController {
     summary: "Submit talent application and upload CV from the authenticated talent portal",
   })
   @ApiConsumes("multipart/form-data")
+  @ApiResponse({ status: 201, description: "Application and CV registered for candidate vetting" })
   @UseInterceptors(FileInterceptor("cv"))
   async submitApplication(
     @CurrentUser() currentUser: AuthenticatedUser,
-    @Body() dto: any,
-    @UploadedFile() cvFile?: Express.Multer.File,
+    @Body() dto: SubmitTalentApplicationDto,
+    @UploadedFile() cvFile?: UploadedMulterFile,
   ) {
     return this.talentsService.submitTalentApplicationFromDashboard(
       currentUser,

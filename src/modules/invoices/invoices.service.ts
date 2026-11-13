@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import {
   InvoiceKind,
+  InvoiceLineKind,
   InvoiceStatus,
   PaymentMethod,
   Prisma,

@@ -6,6 +6,7 @@ import {
   CompanyStatus,
   ConsentType,
   DocumentType,
+  EngagementModel,
   LeadSource,
   LeadStage,
   Prisma,
