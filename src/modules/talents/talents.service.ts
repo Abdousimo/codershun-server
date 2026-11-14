@@ -275,11 +275,12 @@ export class TalentsService {
         data: {
           vettingStage: stage,
           ...((dto.stage as any) === "placed" && { status: TalentStatus.placed }),
-          ...(stage === VettingStage.vetted && talent.status === TalentStatus.in_vetting && {
-            status: TalentStatus.available,
-            vettedAt: new Date(),
-            vettedBy: currentUser.id,
-          }),
+          ...(stage === VettingStage.vetted &&
+            talent.status === TalentStatus.in_vetting && {
+              status: TalentStatus.available,
+              vettedAt: new Date(),
+              vettedBy: currentUser.id,
+            }),
           updatedAt: new Date(),
         },
       });
@@ -950,9 +951,7 @@ export class TalentsService {
   }
 
   async resolveTalentId(user: AuthenticatedUser): Promise<string> {
-    let talent = user.talentId
-      ? await this.prisma.talents.findUnique({ where: { id: user.talentId } })
-      : null;
+    let talent = user.talentId ? await this.prisma.talents.findUnique({ where: { id: user.talentId } }) : null;
     if (!talent && user.id) {
       talent = await this.prisma.talents.findFirst({ where: { userId: user.id } });
     }
@@ -1008,10 +1007,7 @@ export class TalentsService {
           if (req?.roleTitle) roleTitle = req.roleTitle;
         }
 
-        const durationMinutes =
-          inv.startsAt && inv.endsAt
-            ? Math.round((inv.endsAt.getTime() - inv.startsAt.getTime()) / (1000 * 60))
-            : 45;
+        const durationMinutes = inv.startsAt && inv.endsAt ? Math.round((inv.endsAt.getTime() - inv.startsAt.getTime()) / (1000 * 60)) : 45;
 
         return {
           id: inv.id,
@@ -1052,9 +1048,7 @@ export class TalentsService {
     }
 
     if (!talent) {
-      const user = currentUser.id
-        ? await this.prisma.users.findUnique({ where: { id: currentUser.id } })
-        : null;
+      const user = currentUser.id ? await this.prisma.users.findUnique({ where: { id: currentUser.id } }) : null;
 
       let firstName = user?.firstName || "";
       let lastName = user?.lastName || "";
@@ -1119,18 +1113,23 @@ export class TalentsService {
       const rawSkills: unknown = dto.skills;
       const submittedSkills: string[] =
         typeof rawSkills === "string"
-          ? rawSkills.split(",").map((skill: string) => skill.trim()).filter(Boolean)
+          ? rawSkills
+              .split(",")
+              .map((skill: string) => skill.trim())
+              .filter(Boolean)
           : Array.isArray(rawSkills)
             ? rawSkills.filter((skill): skill is string => typeof skill === "string")
             : [];
       if (submittedSkills.length > 0) {
-        const skillSlugs = submittedSkills.map((s) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+        const skillSlugs = submittedSkills.map((s) =>
+          s
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-"),
+        );
         const matchedSkills = await tx.skills.findMany({
           where: {
-            OR: [
-              { name: { in: submittedSkills, mode: "insensitive" } },
-              { slug: { in: skillSlugs } },
-            ],
+            OR: [{ name: { in: submittedSkills, mode: "insensitive" } }, { slug: { in: skillSlugs } }],
           },
         });
 
