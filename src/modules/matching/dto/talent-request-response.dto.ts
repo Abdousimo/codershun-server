@@ -145,6 +145,9 @@ export class TalentRequestResponseDto {
   @ApiPropertyOptional()
   shortlistsCount?: number;
 
+  @ApiPropertyOptional({ description: "ID of the most recently published shortlist, if any" })
+  latestShortlistId?: string | null;
+
   @ApiProperty()
   createdAt!: string;
 

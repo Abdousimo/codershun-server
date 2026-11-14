@@ -275,6 +275,11 @@ export class TalentsService {
         data: {
           vettingStage: stage,
           ...((dto.stage as any) === "placed" && { status: TalentStatus.placed }),
+          ...(stage === VettingStage.vetted && talent.status === TalentStatus.in_vetting && {
+            status: TalentStatus.available,
+            vettedAt: new Date(),
+            vettedBy: currentUser.id,
+          }),
           updatedAt: new Date(),
         },
       });

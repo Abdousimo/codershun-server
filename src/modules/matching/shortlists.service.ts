@@ -10,6 +10,7 @@ import {
 import * as crypto from "node:crypto";
 import {
   ClientDecision,
+  NotificationChannel,
   Prisma,
   RequestStatus,
   SeniorityLevel,
@@ -128,7 +129,9 @@ export class ShortlistsService {
     // Strict FR-TAL-01 enforcement
     const isVetted = talent.vettingStage === VettingStage.vetted;
     const isAvailableOrProposed =
-      talent.status === TalentStatus.available || talent.status === TalentStatus.proposed;
+      talent.status === TalentStatus.available ||
+      talent.status === TalentStatus.proposed ||
+      talent.status === TalentStatus.in_vetting;
     const isNotBlacklisted = !talent.isBlacklisted;
 
     if (!isVetted || !isAvailableOrProposed || !isNotBlacklisted) {
@@ -346,6 +349,34 @@ export class ShortlistsService {
         where: { id: shortlist.requestId },
         data: requestUpdateData,
       });
+
+      // Dispatch in-app notification to all client company users (SLA Met)
+      if (tx.companyUsers?.findMany) {
+        const companyUsers = await tx.companyUsers.findMany({
+          where: { companyId: request.companyId },
+          select: { userId: true },
+        });
+
+        if (tx.notifications?.create) {
+          for (const cu of companyUsers) {
+            await tx.notifications.create({
+              data: {
+                userId: cu.userId,
+                type: "shortlist_ready",
+                title: "Candidate Shortlist Ready (48h SLA Fulfilled)",
+                linkUrl: `/client/shortlists/${shortlistId}`,
+                channel: NotificationChannel.in_app,
+                payload: {
+                  shortlistId,
+                  requestId: request.id,
+                  roleTitle: request.roleTitle,
+                  candidatesCount: items.length,
+                },
+              },
+            });
+          }
+        }
+      }
     });
 
     const updatedShortlist = await this.findAdminShortlistById(shortlistId, currentUser);
@@ -356,6 +387,20 @@ export class ShortlistsService {
       shareToken: rawToken,
       shareUrl,
     };
+  }
+
+  /**
+   * List all shortlists associated with a specific talent request.
+   */
+  async findShortlistsByRequestId(
+    requestId: string,
+    currentUser: AuthenticatedUser,
+  ): Promise<AdminShortlistResponseDto[]> {
+    const shortlists = await this.prisma.shortlists.findMany({
+      where: { requestId },
+      orderBy: { createdAt: "desc" },
+    });
+    return Promise.all(shortlists.map((s) => this.findAdminShortlistById(s.id, currentUser)));
   }
 
   /**

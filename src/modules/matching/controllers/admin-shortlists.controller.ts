@@ -47,6 +47,15 @@ export class AdminShortlistsController {
     return this.shortlistsService.createShortlist(requestId, dto, currentUser);
   }
 
+  @Get("talent-requests/:requestId/shortlists")
+  @ApiOperation({ summary: "Get all shortlists created for a talent request" })
+  async findShortlistsByRequest(
+    @Param("requestId", ParseUUIDPipe) requestId: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.shortlistsService.findShortlistsByRequestId(requestId, currentUser);
+  }
+
   @Get("shortlists/:shortlistId")
   @ApiOperation({ summary: "Get complete shortlist details for internal staff review" })
   async findOne(

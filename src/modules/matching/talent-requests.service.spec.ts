@@ -46,6 +46,13 @@ describe("TalentRequestsService", () => {
       },
       shortlists: {
         count: jest.fn().mockResolvedValue(0),
+        findFirst: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      companies: {
+        findUnique: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+        findFirst: jest.fn(),
       },
       users: {
         findUnique: jest.fn(),

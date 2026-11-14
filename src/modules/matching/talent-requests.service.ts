@@ -13,6 +13,7 @@ import {
   Prisma,
   RequestStatus,
   SeniorityLevel,
+  ShortlistStatus,
   UserRole,
 } from "../../generated/prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -136,10 +137,24 @@ export class TalentRequestsService {
     // Scope check: Client users can only create requests for their own company
     let targetCompanyId = dto.companyId;
     if (currentUser.role === UserRole.client_admin || currentUser.role === UserRole.client_user) {
-      if (!currentUser.companyId) {
+      if (!currentUser.companyId && currentUser.id) {
+        const cu = await this.prisma.companyUsers.findFirst({
+          where: { userId: currentUser.id },
+          select: { companyId: true },
+        });
+        targetCompanyId = cu?.companyId ?? undefined;
+      } else {
+        targetCompanyId = currentUser.companyId ?? undefined;
+      }
+      if (!targetCompanyId) {
         throw new ForbiddenException("Client user is not associated with a company");
       }
-      targetCompanyId = currentUser.companyId;
+    } else if (!targetCompanyId && currentUser.role === UserRole.super_admin) {
+      const firstComp = await this.prisma.companies.findFirst({
+        where: { deletedAt: null },
+        select: { id: true },
+      });
+      targetCompanyId = firstComp?.id;
     }
 
     if (!targetCompanyId) {
@@ -277,7 +292,7 @@ export class TalentRequestsService {
     }
 
     // Load relations
-    const [company, recruiter, skills, languages, shortlistsCount] = await Promise.all([
+    const [company, recruiter, skills, languages, shortlistsCount, latestShortlist] = await Promise.all([
       this.prisma.companies.findUnique({ where: { id: request.companyId }, select: { name: true } }),
       request.recruiterId
         ? this.prisma.users.findUnique({
@@ -293,6 +308,11 @@ export class TalentRequestsService {
       }),
       this.prisma.shortlists.count({
         where: { requestId: id },
+      }),
+      this.prisma.shortlists.findFirst({
+        where: { requestId: id, status: ShortlistStatus.published },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
       }),
     ]);
 
@@ -354,6 +374,7 @@ export class TalentRequestsService {
         minLevel: l.minLevel,
       })),
       shortlistsCount,
+      latestShortlistId: latestShortlist?.id || null,
       createdAt: request.createdAt.toISOString(),
       updatedAt: request.updatedAt.toISOString(),
     };
@@ -409,11 +430,35 @@ export class TalentRequestsService {
       }),
     ]);
 
+    const requestIds = requests.map((r) => r.id);
+    const [companies, publishedShortlists] = await Promise.all([
+      this.prisma.companies.findMany({
+        where: { id: { in: requests.map((r) => r.companyId) } },
+        select: { id: true, name: true },
+      }),
+      requestIds.length > 0
+        ? this.prisma.shortlists.findMany({
+            where: { requestId: { in: requestIds }, status: ShortlistStatus.published },
+            orderBy: { createdAt: "desc" },
+            select: { id: true, requestId: true },
+          })
+        : [],
+    ]);
+
+    const companyMap = new Map(companies.map((c) => [c.id, c.name]));
+    const latestShortlistMap = new Map<string, string>();
+    for (const s of publishedShortlists) {
+      if (!latestShortlistMap.has(s.requestId)) {
+        latestShortlistMap.set(s.requestId, s.id);
+      }
+    }
+
     const mapped = requests.map((req) => {
       const sla = this.computeSlaStatus(req);
       return {
         id: req.id,
         companyId: req.companyId,
+        companyName: companyMap.get(req.companyId) || "Client",
         roleTitle: req.roleTitle,
         seniority: req.seniority,
         engagementModel: req.engagementModel,
@@ -425,6 +470,7 @@ export class TalentRequestsService {
         slaRemainingHours: sla.slaRemainingHours,
         slaWarningStage: sla.slaWarningStage,
         firstShortlistAt: req.firstShortlistAt ? req.firstShortlistAt.toISOString() : null,
+        latestShortlistId: latestShortlistMap.get(req.id) || null,
         createdAt: req.createdAt.toISOString(),
       };
     });

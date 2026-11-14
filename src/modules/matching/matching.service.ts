@@ -97,11 +97,11 @@ export class MatchingService {
 
     const weights = await this.getWeights();
 
-    // 1. Fetch all candidate talents with status Vetted, Available/Proposed, not blacklisted
+    // 1. Fetch all candidate talents with stage Vetted, available/proposed, not blacklisted
     const candidates = await this.prisma.talents.findMany({
       where: {
         vettingStage: VettingStage.vetted,
-        status: { in: [TalentStatus.available, TalentStatus.proposed] },
+        status: { notIn: [TalentStatus.placed, TalentStatus.inactive, TalentStatus.blacklisted] },
         isBlacklisted: false,
         deletedAt: null,
       },
